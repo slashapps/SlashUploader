@@ -1,0 +1,405 @@
+.uploader_form {
+	margin: 0; padding: 0; display: inline;
+}
+.uploader_form .uploader_div {
+	min-height: 30px;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+}
+.loading_bar .uploader_form .uploader_div {
+	height: calc(100% - 25px);
+}
+.uploader_div .uploader_drop_area_wrapper {
+	width: 50%;
+	height: 100%;
+	position: relative;
+	float: left;
+	overflow: hidden;
+}
+.uploader_form.rtl .uploader_drop_area_wrapper {
+	float: right;
+}
+.uploader_drop_area {
+	border: 1px solid #09F;
+	color: #0080D6;
+	position: absolute;
+	overflow: hidden;
+	display: block;
+	text-align: center;
+	border-radius: 4px;
+	z-index: 4;
+	display: table;
+	box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+.uploader_drop_area .uploader_text {
+	display: table-cell;
+	vertical-align: middle;
+}
+.uploader_form.rtl .uploader_drop_area .uploader_text {
+	direction: rtl;
+}
+.uploader_drop_area.uploading .uploader_text span,
+.uploader_drop_area .uploader_cancel span {
+	background: white;
+	display: inline;
+	padding: 3px;
+  	box-shadow: 3px 0 0 white, -3px 0 0 white;
+	line-height: 22px;
+}
+.uploader_drop_area .uploader_cancel {
+	position: absolute;
+	bottom: 5px; right: 5px;
+	z-index: 2;
+	display: none;
+}
+.uploader_form.rtl .uploader_drop_area .uploader_cancel {
+	right: auto; left: 5px;
+	direction: rtl;
+}
+.uploader_drop_area .uploader_cancel span {
+	color: red;
+	font-size: 12px;
+	line-height: 14px;
+	cursor: pointer;
+}
+.uploader_drop_area_bottom, .uploader_drop_area_bottom_bg, .uploader_drop_area_middle {
+	position: absolute;
+	border-radius: 4px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.uploader_drop_area_bottom, .uploader_drop_area_bottom_bg, .uploader_drop_area_middle, .uploader_drop_area {
+	height: 100%;
+	width: 100%;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+.uploader_drop_area_bottom_bg {
+	background: #FFF;
+	z-index: 1;
+}
+.uploader_drop_area_bottom {
+	background: #E5F5FF;
+	z-index: 2;
+}
+.uploader_form.rtl .uploader_drop_area_bottom {
+	left: auto;
+	direction: rtl;
+}
+.uploader_drop_area_middle {
+	z-index: 3;
+}
+.uploader_drop_area_bottom img, .uploader_drop_area_middle img {
+	filter: blur(1px);
+	-webkit-filter: blur(0.8px);
+	-moz-filter: blur(0.8px); 
+	-o-filter: blur(0.8px); 
+	-ms-filter: blur(0.8px); 
+	/*filter: url(#blur);*/ /* Removed - causes problems on Firefox, Chrome, ect. */
+	filter:progid: DXImageTransform.Microsoft.Blur(PixelRadius='1');
+	position: relative;
+	left: -1px;
+	top: 50%;
+	transform: translateY(-50%);
+}
+.uploader_drop_area_bottom img {
+	opacity: 0.65;
+}
+.uploader_drop_area_middle img {
+	opacity: 0.15;
+}
+.uploader_drop_area.hover {
+	background: #E5F5FF;
+    padding: 0px 0px 0px 0px;
+}
+.uploader_drop_area.dragged_over {
+	background: #E5F5FF;
+	border: 2px dashed #09F;
+    padding: 0px 0px 0px 0px;
+}
+.uploader_drop_area.dragged_enter {
+	background: #FFFFFF;
+	border: 2px dashed #09F;
+    padding: 0px 0px 0px 0px;
+}
+.uploader_drop_area .uploader_spinner {
+	top: 4px; left: -3px;
+}
+.uploader_form.rtl .uploader_drop_area .uploader_spinner {
+	left: 3px;
+}
+.uploader_drop_area .input_wrapper {
+	width: 100%; height: 100%;
+	overflow: hidden;
+	position: absolute;
+	left: 0;
+}
+.uploader_drop_area input {
+	position: absolute; right: 0px; top: 0px;
+	font-family: Arial;
+	margin: 0; padding: 0;
+	font-size: 240px;
+	height: 6000px;
+	cursor: pointer;
+	opacity: 0;
+	filter: alpha(opacity = 0);
+}
+.uploader_drop_area_custom input {
+	position: absolute; left: 0px; top: 0px;
+	font-family: Arial;
+	margin: 0; padding: 0;
+	cursor: pointer;
+	height: 100px; width: 200px;
+	font-size: 0;
+	opacity: 0;
+	filter: alpha(opacity = 0);
+	filter: progid:DXImageTransform.Microsoft.Alpha(opacity = 0);
+}
+
+.uploader_drop_area_custom {
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+.slash_uploader.disabled {
+	cursor: default;
+	opacity: 0.5;
+	filter: alpha(opacity = 50);
+	filter: progid:DXImageTransform.Microsoft.Alpha(opacity = 50);
+}
+
+/*
+
+	Progress Bar
+
+*/
+.uploader_progress_container {
+	padding-top: 5px;
+	height: 25px;
+}
+.uploader_progress_container>table {
+	width: 100%;
+	border-spacing: 0; border-collapse: collapse; border: none;
+}
+.uploader_form.rtl .uploader_progress_container table {
+	direction: rtl;
+}
+.uploader_progress_container .uploader_progress_bar {
+	width: auto;
+}
+.uploader_progress_container .uploader_progress_bar>div {
+	width: 100%; height: 12px; border: 1px solid black;
+	padding: 1px 1px 1px 1px;
+}
+.uploader_progress_container .uploader_progress_bar>div>div {
+	background: #09F; height: 100%;
+	width: 100%; 
+}
+.uploader_progress_bar_padding {
+	width: 10px;
+}
+.uploader_progress_bar_loading_padding {
+	width: 3px;
+}
+.uploader_progress_bar_loading {
+	width: 20px;
+}
+.uploader_progress_bar_text {
+	width: 1%;
+    white-space: nowrap;
+    /*max-width: 250px;*/
+    max-width: 60%;
+    overflow: hidden;
+}
+.uploader_progress_container .uploader_progress_bar div div {
+	width: 0%;
+}
+/*
+
+	Spiner animation
+
+*/
+@-ms-keyframes spin {
+    from { -ms-transform: rotate(0deg); }
+    to { -ms-transform: rotate(360deg); }
+}
+@-moz-keyframes spin {
+    from { -moz-transform: rotate(0deg); }
+    to { -moz-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
+@keyframes spin {
+    from {
+        transform:rotate(0deg);
+    }
+    to {
+        transform:rotate(360deg);
+    }
+}
+.uploader_spinner {
+    position: relative;
+    left: 0px;
+    top: 0px;
+    width: 15px;
+    height: 15px;
+    border-radius:50%;
+    display:inline-block;
+    border: 2px solid #09F;
+    border-right: 2px solid rgba(0, 153, 255, 0.25);
+    border-bottom: 2px solid rgba(0, 153, 255, 0.25);
+    border-left: 2px solid rgba(0, 153, 255, 0.25);
+    -webkit-animation: spin 1s ease infinite;
+    -moz-animation: spin 1s ease infinite;
+    animation: spin 1s ease infinite;
+}
+.uploader_progress_bar_loading .uploader_spinner {
+	display: block;
+}
+/*
+
+	Upload results
+
+*/
+.uploader_result_wrapper {
+	padding-right: 6px;
+	padding-left: 6px;
+	overflow: hidden; vertical-align: bottom;
+	word-break: break-all;
+	width: calc(50% - 25px);
+	float: left;
+	height: 100%;
+	display: table;
+	text-align: left;
+}
+.uploader_form.rtl .uploader_result_wrapper {
+	float: right;
+	text-align: right;
+}
+.uploader_result {
+	height: 100%;
+	display: table-cell;
+	vertical-align: bottom;
+}
+.uploader_result.error {
+	color: red;
+	word-break: normal;
+}
+.uploader_form.rtl .uploader_result.error {
+	text-align: right;
+	direction: rtl;
+}
+.uploader_delete_btn div {
+	position: relative;
+	top: 2px;
+	border: none;
+	width: 16px; height: 16px;
+	display: inline-block;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAeUlEQVQ4jdWSUQoDIQxEX4oX2IP1Skrmwj1C+qPgrutSl360D8RJMGEStIjgiKQhmXO2Y87MICJ2x93jjJrfvQUwdx8tfEgpxVK1t1wsCYDUB7e4mntG2wfAY2btSvcMDVb54wZtJz84Qv8rZ/qrDlK9N0mvhbpnE2+HaoSqJnzSpgAAAABJRU5ErkJggg==);
+}
+.uploader_result_file {
+	min-width: 100px;
+}
+.uploader_result_file a {
+	color: #09F;
+}
+.uploader_form.rtl .uploader_result_file {
+	direction: rtl;
+}
+.disabled .uploader_delete_btn,
+.disabled .uploader_delete_btn div,
+.disabled .uploader_delete_btn a {
+	cursor: default !important;
+}
+/*
+
+	IE @media
+
+*/
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) { /* IE only */
+	.slash_uploader.disabled .uploader_drop_area_bottom_bg {
+		display: none;
+	}
+}
+@media \0screen { /* IE8 only */
+    .uploader_drop_area input {
+		width: 200px;
+    }
+    .uploader_drop_area input, .uploader_drop_area_custom input {
+	    border: none;
+	    outline: none;
+	    outline-style: none;
+    }
+	.uploader_drop_area_custom input {
+		font-size: 240px;
+	}
+    .uploader_result_wrapper {
+    	height: 96%;
+    }
+	.slash_uploader.disabled .uploader_drop_area_wrapper,
+	.slash_uploader.disabled .uploader_drop_area,
+	.slash_uploader.disabled .uploader_text
+	{
+		filter: alpha(opacity = 50);
+		filter: progid:DXImageTransform.Microsoft.Alpha(opacity = 50);
+	}
+	.loading_bar .uploader_form .uploader_div {
+		height: 80%;
+	}
+	.uploader_progress_bar_loading, .uploader_progress_bar_loading_padding {
+		display: none;
+	}
+	.uploader_spinner {
+		display: none;
+	}
+	.uploader_result_wrapper {
+		width: 45%;
+	}
+}
+@media screen and (min-width:0) and (min-resolution: .001dpcm) { /* IE9 Only */
+	.uploader_drop_area_custom input {
+		font-size: 240px\9;
+	}
+	.uploader_progress_bar_loading, .uploader_progress_bar_loading_padding {
+		display: none\9;
+	}
+	.uploader_spinner {
+		display: none\9;
+	}
+	.uploader_result_wrapper {
+		width: 45%\9;
+	}
+
+	/*
+	CSS Minify causes problems here. Do we realy need that slash?
+	
+	.uploader_drop_area_custom input {
+		font-size: 240px \ ;
+	}
+	.uploader_progress_bar_loading, .uploader_progress_bar_loading_padding {
+		display: none \ ;
+	}
+	.uploader_spinner {
+		display: none \ ;
+	}
+	.uploader_result_wrapper {
+		width: 45% \ ;
+	}
+	*/
+}
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) { /* IE10 only */
+	.uploader_drop_area_custom input {
+		font-size: 240px;
+	}
+}

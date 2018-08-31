@@ -1,0 +1,529 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>SlashUploader</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script src="./SlashUploader/SlashUploader.min.js"></script>
+<link rel="stylesheet" href="./SlashUploader/SlashUploader.min.css" type="text/css" />
+
+<script>
+var uploaderDefault;
+var uploaderSingleFile;
+var uploaderNoMetadata;
+var uploaderNoChunks;
+var uploaderDisabled;
+var uploaderPreDefinedFiles;
+var uploaderProgressBar;
+var uploaderRtl;
+var uploaderNoDragDrop;
+var uploaderNoResults;
+var uploaderCrossDomain;
+var uploaderWithValidations;
+var uploaderNoOverwrite;
+var uploaderCustomCss;
+var uploaderCustomHTML;
+
+function init () {
+	setTimeout (function () {
+		buildUploaders();
+	}, 10);
+}
+
+if (typeof console == "undefined") console = { // Prevent old browsers error
+    log: function() {},
+    debug: function() {},
+    error: function() {},
+    warn: function() {}
+};
+
+function buildUploaders () {
+	
+	var onFilesSelected = function (files) {
+		console.log ("onFilesSelected", files);
+		var str = "<u>Files selected:</u><br>";
+		for (var i=0; i<files.length; i++) {
+			str += files[i].name+"; "+files[i].width+"x"+files[i].height+"<br>";
+		}
+		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+	};
+
+	var onFilesUploaded = function (files) {
+		console.log ("onFilesUploaded", files);
+		var str = "<u>Files uploaded:</u><br>";
+		for (var i=0; i<files.length; i++) {
+			str += files[i].file_name+"<br>";
+		}
+		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+	};
+
+	var onFilesUploaded = function (files) {
+		for (var i=0; i<files.length; i++) {
+		    var file = files[i];
+		    console.log ("Name: "+file[this.serverScripts.fileNameVariableName]+"; URL: "+file[this.serverScripts.fileUrlVariableName]);
+		}
+	};
+
+	var onFileDeleted = function (deletedFile, files) {
+		console.log ("onFileDeleted", deletedFile, files);
+		var str = "<u>File deleted:</u><br>";
+		str += deletedFile.file_name+"<br><br>";
+		str += "<u>Files remaining:</u><br>";
+		for (var i=0; i<files.length; i++) {
+			str += files[i].file_name+"<br>";
+		}
+		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+	}
+
+	var onFilesProgress = function (curUploadingFileProgress, curUploadingFileIndex, totalFilesToUpload) {
+		var text = Math.floor(curUploadingFileProgress*100)+"% ("+(curUploadingFileIndex+1)+"/"+totalFilesToUpload+")";
+		console.log ("onFilesProgress", text);
+		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (text);
+	};
+
+	var onCanceled = function () {
+		var str = "Canceled";
+		$(this.elements.containerElement).parent().parent().find(".uploader_status").html(str).css("display", "none").fadeIn();
+	};
+
+	var onError = function (errors) {
+		console.log ("onError", errors);
+		var str = "<u>Error with files:</u><br>";
+		for (var i=0; i<errors.length; i++) {
+			if (errors[i].file != null) {
+				str += errors[i].file.name+"<br>";
+			}
+		}
+		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+	};
+	
+	uploaderDefault = new SlashUploader ($("#uploader_default"));
+	
+	uploaderSingleFile = new SlashUploader ($("#uploader_single_file"), {
+		dropFilesText: "Drop file here",
+		browseText: "Drop file here or click to upload",
+		maxFiles: 1,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+	
+	uploaderNoMetadata = new SlashUploader ($("#uploader_no_metadata"), {
+		doGetFileMetadata: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderNoChunks = new SlashUploader ($("#uploader_no_chunks"), {
+		uploadFileInChunks: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderDisabled = new SlashUploader ($("#uploader_disabled"), {
+		uploadedFiles: [
+						{file_name: "2015-08-13(2).jpg", file_path: "//localhost/Libs/server_scripts/uploads/2015-08-13(2).jpg"},
+						{file_name: "alon.jpg", file_path: "//localhost/Libs/server_scripts/uploads/alon.jpg"}
+						],
+	    onFilesUploaded: function (files) {
+	        this.disabled = true;
+	    },
+		disabled: true
+	});
+
+	uploaderPreDefinedFiles = new SlashUploader ($("#uploader_pre_defined_files"), {
+		uploadedFiles: [
+						{file_name: "2015-08-13(2).jpg", file_path: "//localhost/Libs/server_scripts/uploads/2015-08-13(2).jpg"},
+						{file_name: "alon.jpg", file_path: "//localhost/Libs/server_scripts/uploads/alon.jpg"}
+						],
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderProgressBar = new SlashUploader ($("#uploader_progress_bar"), {
+		progressAnimationType: "inline|bar",
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+
+	uploaderRtl = new SlashUploader ($("#uploader_rtl"), {
+		progressAnimationType: "inline|bar",
+		rtl: true,
+		browseText: "הנח קבצים כאן או לחץ לבחירת קבצים",
+		browseTextDropDisabled: "לחץ לבחירת קובץ",
+		dropFilesText: "הנח קבצים כאן",
+		uploadingFileText: "מעלה את הקובץ \"{{current_file_name}}\"...",
+		uploadingFileTextProgressBar: "מעלה את הקובץ \"{{current_file_name}}\"...",
+		uploadingFilesText: "מעלה {{total_files}} קבצים...",
+		uploadingFilesTextProgressBar: "מעלה {{total_files}} קבצים...",
+		uploadingFileByFileText: "מעלה את הקובץ \"{{current_file_name}}\" (קובץ {{current_file_index}} מתוך {{total_files}})",
+		cancelText: "ביטול"
+	});
+
+	uploaderNoDragDrop = new SlashUploader ($("#uploader_no_drag_drop"), {
+		enableDropFiles: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderNoResults = new SlashUploader ($("#uploader_no_results"), {
+		showUploadedFiles: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderCrossDomain = new SlashUploader ($("#uploader_field_cross_domain"), {
+		serverScripts: {
+			uploadChunk: "//otherdomain.com/test/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
+			combineChunks: "//otherdomain.com/test/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}",
+			uploadStream: "//otherdomain.com/test/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}",
+			uploadThroughIframe: "//otherdomain.com/test/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}"
+		},
+		uploadFileInChunks: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderWithValidations = new SlashUploader ($("#uploader_field_validations"), {
+		allowedFilesExtensions: ["mp4", "mov", "avi", "ogv", "wmv", "flv", "mkv", "mpg", "webm"],
+		allowedMaxFileSize: 10000,
+		customValidation: function (file) {
+			if (file.duration == null) {
+				console.log ("Couldn't read metadata for '"+file.name+"', so duration validation isn't possible");
+			} else if (file.duration < 10) {
+				return {error: 'invalid_duration', error_text: "\"{{file_name}}\" duration is less then 10 seconds."};
+			}
+		},
+		errors: {
+			invalidFileExtension: "File \"{{file_name}}\" is not a supportted video format.",
+			invalidFileSize: "File \"{{file_name}}\" exceeds 10MB."
+		},
+		acceptOnlyFilesTypes: "video/*",
+		maxFileChars: 18,
+		resetFilesOnEachUpload: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderNoOverwrite = new SlashUploader ($("#uploader_no_overwrite"), {
+		resetFilesOnEachUpload: false,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderCustomCss = new SlashUploader ($("#uploader_custom_css"), {
+		progressAnimationType: "inline|bar",
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+
+	uploaderCustomHTML = new SlashUploader ($("#uploader_field_custom_button"), {
+		customHTML: true,
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+	
+}
+</script>
+
+<style>
+html, body {
+	font-family: arial;
+}
+.uploader_field {
+	width: 450px; height: 160px;
+	background: #F7F7F7;
+	border: 1px solid #CCC;
+	border-radius: 2px;
+}
+#uploader_field3, #uploader_field4 {
+	height: 70px;
+}
+.uploader_status {
+	vertical-align: top;
+}
+.custom {
+	padding: 40px;
+}
+.custom:hover {
+	background-color: grey;
+	-webkit-transition: all 1s; /* Safari */
+    transition: all 1s;
+}
+
+.custom_css .uploader_drop_area {
+	border: 2px solid green;
+	color: green;
+}
+.custom_css .uploader_drop_area.hover {
+	background: #93c293;
+	color: white;
+}
+.custom_css .uploader_drop_area.dragged_enter {
+	background: #296d29;
+	color: white;
+	border: 2px dashed white;
+}
+.custom_css .uploader_drop_area.dragged_over {
+	background: #0c510c;
+	color: white;
+	border: 2px dashed white;
+}
+.custom_css .uploader_drop_area_bottom {
+	background: #97e497;
+}
+.custom_css .uploader_spinner {
+    border: 2px solid green;
+    border-right: 2px solid rgba(0, 255, 0, 0.25);
+    border-bottom: 2px solid rgba(0, 255, 0, 0.25);
+    border-left: 2px solid rgba(0, 255, 0, 0.25);
+}
+.custom_css .uploader_result_file a {
+	color: green;
+}
+.custom_css .uploader_progress_container .uploader_progress_bar>div>div {
+	background: green;
+}
+</style>
+
+</head>
+
+<body onload="init();">
+
+	<table cellpadding='6'>
+		<tr>
+			<th class="title_th">
+			</th>
+			<th class="uploader_th">
+			</th>
+			<th class="status_th">
+			</th>
+		</tr>
+		<tr>
+			<td>
+				Default
+			</td>
+			<td>
+				<div id="uploader_default" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Single File
+			</td>
+			<td>
+				<div id="uploader_single_file" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Without metadata
+			</td>
+			<td>
+				<div id="uploader_no_metadata" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Without chunks upload
+			</td>
+			<td>
+				<div id="uploader_no_chunks" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Disabled
+			</td>
+			<td>
+				<div id="uploader_disabled" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Pre-defined files
+			</td>
+			<td>
+				<div id="uploader_pre_defined_files" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Progress bar animation
+			</td>
+			<td>
+				<div id="uploader_progress_bar" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				RTL
+			</td>
+			<td>
+				<div id="uploader_rtl" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Drag & Drop disabled
+			</td>
+			<td>
+				<div id="uploader_no_drag_drop" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Don't show uploaded files
+			</td>
+			<td>
+				<div id="uploader_no_results" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Cross-Domain Script
+			</td>
+			<td>
+				<div id="uploader_field_cross_domain" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+				<div></div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Validations
+			</td>
+			<td>
+				<div id="uploader_field_validations" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+				<div></div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				No overwrite
+			</td>
+			<td>
+				<div id="uploader_no_overwrite" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+				<div></div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Custom CSS
+			</td>
+			<td>
+				<div id="uploader_custom_css" class="uploader_field custom_css">
+				</div>
+			</td>
+			<td class="uploader_status">
+				<div></div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				Custom button
+			</td>
+			<td>
+				<div id="uploader_field_custom_button" class="uploader_field custom">
+					<div class="btn" style="padding: 20px;">
+						Upload it!
+					</div>
+				</div>
+				<a href='javascript: uploaderCustomHTML.cancelUpload(); void (0);'>Cancel</a>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+
+
+
+	</table>
+	
+</body>
+</html>
