@@ -5,6 +5,10 @@
 Current web.config files allows to upload big files.
 In order for the web.config file to take effect - folder must be Application Pool on server, or web.config file should be located on current Application Pool root.
 
+## Uploads Folder
+
+Make sure to give "uploads" folder on your server read & write permissions.
+
 ## Security
 
 Example code trys to limit file types based on file extenstion.
