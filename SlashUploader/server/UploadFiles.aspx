@@ -3,87 +3,138 @@
 <%@ Import Namespace="System.Drawing" %>
 <%@ Import Namespace="System.Drawing.Drawing2D" %>
 <%
-    Response.AppendHeader("Access-Control-Allow-Origin", "*");
-    
-    string FileFolder = "./uploads/";
-    bool DoOverwriteFilename = false;
-    bool SaveFileWithGuidFilename = false;
+Response.AppendHeader("Access-Control-Allow-Origin", "*");
 
-    string Method = Request["method"];
-    string IframeGateway = Request["iframe_gateway"];
-    string FileName = Request["file_name"];
-    string RequestId = Request["request_id"];
-    string ChunkIndex = Request["chunk_index"];
-    string Rotation = Request["rotation"];
+string FileFolder = "./uploads/";
+bool DoOverwriteFilename = false;
+bool SaveFileWithGuidFilename = false;
     
-    try {
+try {
         
-        int RotationInt = 0;
-		
-		// TODO: Make each endpoint into a function.
-		
+    if (ValidateFilesTypes())
+    {
+        string Method = Request["method"];
         if (Method == "combine_chunks") {
-
-            int.TryParse(Rotation, out RotationInt);
-            NameValueCollection CombinedFile = CombineFileChunks (FileName, FileFolder, RequestId, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
-            string FileDataJson = GetFileJson(CombinedFile);
-            Response.Write (GetJsonResponse(FileDataJson));
-
+            CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
         } else if (Method == "upload_chunk") {
-
-            string Folder = UploadFileChunk(FileName, FileFolder, RequestId, ChunkIndex);
-            Response.Write (GetJsonResponse(@"{""success"": ""1""}"));
-
+            UploadChunk(FileFolder);
         } else if (Method == "upload_through_iframe") {
-
-            string FilesReturnStr = "";
-            string[] Rotations = null;
-            if (!string.IsNullOrEmpty(Rotation))
-            {
-                Rotations = Rotation.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-            }
-            for (int i=0; i<Request.Files.Count; i++) {
-                RotationInt = 0;
-                if (Rotations != null && Rotations.Length > i)
-                {
-                    int.TryParse(Rotations[i], out RotationInt);
-                }
-                NameValueCollection UploadedResult = UploadPostedFile (FileName, FileFolder, i, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
-                string FileDataJson = GetFileJson(UploadedResult);
-                FilesReturnStr += FileDataJson;
-                if (i < Request.Files.Count-1) {
-                    FilesReturnStr += ",";
-                }
-            }
-
-            string ResponseStr = GetIframeResponse(IframeGateway, RequestId, FilesReturnStr);
-            Response.Write (ResponseStr);
-
+            UploadThroughIframe(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
         } else if (Method == "upload_stream") {
-
-            int.TryParse(Rotation, out RotationInt);
-            NameValueCollection UploadedResult = SaveFileFromStreamData (FileName, FileFolder, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
-            string FileDataJson = GetFileJson(UploadedResult);
-            Response.Write (GetJsonResponse(FileDataJson));
-
+            UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
         }
 
-    } catch (Exception e) {
-        string ErrorJson = GetErrorJson(e);
-        string ResponseStr = "";
-        if (Method == "upload_through_iframe")
-        {
-            ResponseStr = GetIframeResponse(IframeGateway, RequestId, ErrorJson);
-        } else
-        {
-            ResponseStr = GetJsonResponse(ErrorJson);
-        }
-        Response.Write (ResponseStr);
+    } else
+    {
+        ResponseError("File type is not allowed. The only allowed file types to upload are images, media, plain text and documents.");
     }
-
+        
+} catch (Exception e) {
+    ResponseError(e);
+}
 %>
 
 <script runat="server">
+
+    //
+    //
+    //  Endpoints
+    //
+
+    public static void CombineChunks(string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        string Rotation = PageApp.Request["rotation"];
+        string FileName = PageApp.Request["file_name"];
+        string RequestId = PageApp.Request["request_id"];
+        int RotationInt = 0;
+        int.TryParse(Rotation, out RotationInt);
+        NameValueCollection CombinedFile = CombineFileChunks (FileName, FileFolder, RequestId, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
+        string FileDataJson = GetFileJson(CombinedFile);
+        PageApp.Response.Write (GetJsonResponse(FileDataJson));
+    }
+
+    public static void UploadChunk(string FileFolder)
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        string FileName = PageApp.Request["file_name"];
+        string RequestId = PageApp.Request["request_id"];
+        string ChunkIndex = PageApp.Request["chunk_index"];
+        string Folder = UploadFileChunk(FileName, FileFolder, RequestId, ChunkIndex);
+        PageApp.Response.Write (GetJsonResponse(@"{""success"": ""1""}"));
+    }
+
+    public static void UploadThroughIframe (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        string Rotation = PageApp.Request["rotation"];
+        string FileName = PageApp.Request["file_name"];
+        string IframeGateway = PageApp.Request["iframe_gateway"];
+        string RequestId = PageApp.Request["request_id"];
+        int RotationInt = 0;
+        string FilesReturnStr = "";
+        string[] Rotations = null;
+        if (!string.IsNullOrEmpty(Rotation))
+        {
+            Rotations = Rotation.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+        }
+        for (int i=0; i<PageApp.Request.Files.Count; i++) {
+            RotationInt = 0;
+            if (Rotations != null && Rotations.Length > i)
+            {
+                int.TryParse(Rotations[i], out RotationInt);
+            }
+            NameValueCollection UploadedResult = UploadPostedFile (FileName, FileFolder, i, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
+            string FileDataJson = GetFileJson(UploadedResult);
+            FilesReturnStr += FileDataJson;
+            if (i < PageApp.Request.Files.Count-1) {
+                FilesReturnStr += ",";
+            }
+        }
+
+        string ResponseStr = GetIframeResponse(IframeGateway, RequestId, FilesReturnStr);
+        PageApp.Response.Write (ResponseStr);
+    }
+
+    public void UploadStream (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        string Rotation = PageApp.Request["rotation"];
+        string FileName = PageApp.Request["file_name"];
+        int RotationInt = 0;
+        int.TryParse(Rotation, out RotationInt);
+        NameValueCollection UploadedResult = SaveFileFromStreamData (FileName, FileFolder, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
+        string FileDataJson = GetFileJson(UploadedResult);
+        PageApp.Response.Write (GetJsonResponse(FileDataJson));
+    }
+
+    public static bool ValidateFilesTypes ()
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        string FileName = PageApp.Request["file_name"];
+        bool FileTypeIsValid = true;
+        if (!IsFileTypeValid (FileName))
+        {
+            FileTypeIsValid = false;
+        }
+        if (PageApp.Request.Files != null)
+        {
+            for (int i = 0; i < PageApp.Request.Files.Count; i++)
+            {
+                HttpPostedFile PostedFile = PageApp.Request.Files[i];
+                if (!IsFileTypeValid (PostedFile.FileName))
+                {
+                    FileTypeIsValid = false;
+                }
+            }
+        }
+        return FileTypeIsValid;
+    }
+
+    //
+    //
+    //  Functions
+    //
 
     public static string GetJsonResponse (string FileDataJson) {
 
@@ -121,23 +172,35 @@
     public static string GetFileJson (NameValueCollection FileObject) {
 
         string FileJson = @"{
-			""file_name"": """+FileObject["file_name"]+@""",
-			""file_path"": """+FileObject["file_path"]+@""",
-			""error"": """+FileObject["error"]+@"""
-			}";
+	""file_name"": """+FileObject["file_name"]+@""",
+	""file_path"": """+FileObject["file_path"]+@""",
+	""error"": """+FileObject["error"]+@"""
+	}";
         return FileJson;
 
     }
 
-    public static string GetErrorJson (Exception Exp) {
+    public static void ResponseError(Exception Exp)
+    {
+        ResponseError(ParseJsonStringValue(Exp.Message+" "+Exp.StackTrace));
+    }
 
-        string FileJson = @"{
-			""file_name"": """",
-			""file_path"": """",
-			""error"": """+ParseJsonStringValue(Exp.Message+" "+Exp.StackTrace)+@"""
-			}";
-        return FileJson;
-
+    public static void ResponseError (string ErrorString)
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        NameValueCollection ErrorResult = new NameValueCollection();
+        ErrorResult["error"] = ErrorString;
+        string ErrorJson = GetFileJson(ErrorResult);
+        string Method = PageApp.Request["method"];
+        if (Method == "upload_through_iframe")
+        {
+            string IframeGateway = PageApp.Request["iframe_gateway"];
+            string RequestId = PageApp.Request["request_id"];
+            PageApp.Response.Write (GetIframeResponse(IframeGateway, RequestId, ErrorJson));
+        } else
+        {
+            PageApp.Response.Write (GetJsonResponse(ErrorJson));
+        }
     }
 
     public static string UploadFileChunk (string FileName, string FileFolder, string RequestId, string ChunkIndex) {
@@ -303,7 +366,24 @@
             .Replace("+", "")
             .Replace("%", "")
             .Replace("#", "")
+            .Replace(";", "")
+            .Replace(">", "")
+            .Replace("<", "")
+            .Replace("/", "")
+            .Replace("*", "")
+            .Replace("%", "")
+            .Replace("$", "")
+            .Replace("|", "")
+            .Replace("?", "")
+            .Replace(@"""", "")
+            .Replace("'", "")
             .Replace(" ", "_");
+
+        while (FileName.Split('.').Length - 1 > 1) // As long as there is more then 1 dot, remove first dot
+        {
+            int DotIndex = FileName.IndexOf(".");
+            FileName = (DotIndex < 0) ? FileName : FileName.Remove(DotIndex, 1);
+        }
 
         string FilesNumberingType = "parenthesis";
         if (PageApp.Request.Browser.Type.ToUpper().Contains("IE"))
@@ -456,6 +536,26 @@
 
     public static string GetGuid () {
         return (Guid.NewGuid().ToString());
+    }
+
+    public static bool IsFileTypeValid (string FileName)
+    {
+        String[] AllowedTypes = {
+            "jpg", "png", "gif", "jpeg", "bmp", "tiff", // Images
+            "3gp2", "3gpp", "3gpp2", "asf", "asx", "avi", "flv", "m4v", "mkv", "mov", "mpeg", "mpg", "mpe", "m1s", "mpa", "mp2", "m2a", "mp2v", "m2v", "m2s", "mp4", "ogg", "rm", "wmv", "mp4", "qt", "ogm", "vob", "webm", "787", // Videos
+            "3gp", "act", "aiff", "aac", "alac", "amr", "atrac", "au", "awb", "dct", "dss", "dvf", "flac", "gsm", "iklax", "ivs", "m4a", "m4p", "mmf", "mp3", "mpc", "msv", "ogg", "opus", "raw", "tta", "vox", "wav", "wma", // Audios
+            "txt", // plain Text
+            "doc", "docb", "docm", "docx", "dot", "dotm", "dotx", "pdf", "pot", "potm", "potx", "ppam", "pps", "ppsx", "ppt", "pptm", "pptx", "sldm", "sldx", // Docs
+            "csv", "xla", "xlam", "xll", "xlm", "xls","xlsb", "xslm", "xlsx", "xlt", "xltm", "xltx", "xlw" // Excel
+        };
+        string Extension = GetFileExtension(FileName).ToLower();
+        if (!string.IsNullOrEmpty(Extension) && Array.IndexOf(AllowedTypes, Extension) >= 0)
+        {
+            return true;
+        } else
+        {
+            return false;
+        }
     }
 
 </script>
