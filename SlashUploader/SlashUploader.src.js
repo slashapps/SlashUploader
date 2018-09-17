@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.0
+ * SlashUploader - JS plugin - Version 1.5.1
  * Copyright (c) 2018 Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
  */
@@ -29,7 +29,6 @@ function FileData (file) {
 
 function SlashUploader (element, opts) {
 
-
 	this.opts = opts;
 	this._internalVariables = {};
 	this._internalVariables.instance = this;
@@ -52,40 +51,40 @@ function SlashUploader (element, opts) {
 	this._internalVariables.setVariable = function (variableName) {
 		var instance = this.instance;
 		if (variableName == "acceptOnlyFilesTypes") {
-			$(instance.elements.uploaderInputElement).attr("accept", instance.acceptOnlyFilesTypes);
+			noJquery(instance.elements.uploaderInputElement).attr("accept", instance.acceptOnlyFilesTypes);
 		} else if (variableName == "maxFiles") {
 
 			if (instance.maxFiles > 1) {
 				if (instance.elements.uploaderInputElement != null) {
-					$(instance.elements.uploaderInputElement).attr("multiple", "multiple");
+					noJquery(instance.elements.uploaderInputElement).attr("multiple", "multiple");
 				}
 			} else {
 				if (instance.elements.uploaderInputElement != null) {
-					$(instance.elements.uploaderInputElement).removeAttr('multiple');
+					noJquery(instance.elements.uploaderInputElement).removeAttr('multiple');
 				}
 			}
 
 		} else if (variableName == "showUploadedFiles") {
 			if (instance.showUploadedFiles) {
-				$(instance.elements.uploaderResultWrapperElement).attr("style", "");
-				$(instance.elements.uploaderDropAreaWrapper).attr("style", "");
+				noJquery(instance.elements.uploaderResultWrapperElement).attr("style", "");
+				noJquery(instance.elements.uploaderDropAreaWrapper).attr("style", "");
 			} else {
-				$(instance.elements.uploaderResultWrapperElement).attr("style", "width: 0px; display: none;");
-				$(instance.elements.uploaderDropAreaWrapper).attr("style", "width: 100%;");
+				noJquery(instance.elements.uploaderResultWrapperElement).attr("style", "width: 0px; display: none;");
+				noJquery(instance.elements.uploaderDropAreaWrapper).attr("style", "width: 100%;");
 			}
 		} else if (variableName == "disabled") {
 			if (instance.disabled) {
-				$(instance.elements.containerElement).addClass("disabled");
-				$(instance.elements.uploaderDropAreaElement).find(".input_wrapper").css("display", "none");
+				noJquery(instance.elements.containerElement).addClass("disabled");
+				noJquery(instance.elements.uploaderDropAreaElement).find(".input_wrapper").css("display", "none");
 			} else {
-				$(instance.elements.containerElement).removeClass("disabled");
-				$(instance.elements.uploaderDropAreaElement).find(".input_wrapper").css("display", "");
+				noJquery(instance.elements.containerElement).removeClass("disabled");
+				noJquery(instance.elements.uploaderDropAreaElement).find(".input_wrapper").css("display", "");
 			}
 		} else if (variableName == "rtl") {
 			if (instance.rtl) {
-				$("#"+instance.elements.elementId).addClass("rtl");
+				noJquery("#"+instance.elements.elementId).addClass("rtl");
 			} else {
-				$("#"+instance.elements.elementId).removeClass("rtl");
+				noJquery("#"+instance.elements.elementId).removeClass("rtl");
 			}
 		} else if (variableName == "enableDropFiles") {
 			instance._internalVariables.setDropFileEvents();
@@ -270,6 +269,17 @@ function SlashUploader (element, opts) {
 	        this._internalVariables.setVariable();
 	    }
 	});
+	Object.defineProperty(this, 'serverScripts', {
+	    get: function() {
+	        return _variables.serverScripts;
+	    },
+	    set: function(value) {
+	    	var curServerScripts = this.serverScripts;
+	    	noJquery.extend(curServerScripts, value);
+	    	_variables.serverScripts = curServerScripts;
+	    }
+	});
+
 
 	this.onFilesSelected = null;
 	this.onFilesUploaded = null;
@@ -285,8 +295,10 @@ function SlashUploader (element, opts) {
 	this.doGetFileMetadata = true;
 	this.allowedFilesExtensions = null;
 	this.allowedMaxFileSize = null; // maximum file size in KB
+	this.showDetailedErrorFromServer = true;
+	this.displayErrorDuration = 4500;
 	
-	this.serverScripts = {
+	_variables.serverScripts = {
 		uploadChunk: "./SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
 		combineChunks: "./SlashUploader/server/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}",
 		uploadStream: "./SlashUploader/server/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}",
@@ -296,7 +308,6 @@ function SlashUploader (element, opts) {
 		errorVariableName: "error"
 	};
 
-	this.displayErrorDuration = 4500;
 
 	_variables.showUploadedFiles = true;
 	_variables.disabled = false;
@@ -340,7 +351,63 @@ function SlashUploader (element, opts) {
 	this.errors.uploadFailed = "Failed to upload";
 	this.errors.unspecifiedError = "Unspecified error";
 
+	
+	if (navigator.appVersion.indexOf("MSIE") != -1 && parseFloat(navigator.appVersion.split("MSIE")[1]) == 8) {
+		// On IE8, set all valiables on interval, since there's no getters and setters on IE8
+		var instance = this;
+		var prevServerScripts = _variables.serverScripts;
+		var prevVars = {};
+		function setVariablesTimeout () {
+			if (prevVars.acceptOnlyFilesTypes != instance.acceptOnlyFilesTypes) {
+				instance._internalVariables.setVariable("acceptOnlyFilesTypes");
+			}
+			if (prevVars.showUploadedFiles != instance.showUploadedFiles) {
+	        	instance._internalVariables.setVariable("showUploadedFiles");
+			}
+			if (prevVars.disabled != instance.disabled) {
+				instance._internalVariables.setVariable("disabled");
+			}
+			if (prevVars.enableDropFiles != instance.enableDropFiles) {
+	        	instance._internalVariables.setVariable("enableDropFiles");
+			}
+			if (prevVars.maxFiles != instance.maxFiles) {
+	        	instance._internalVariables.setVariable("maxFiles");
+			}
+			if (prevVars.progressAnimationType != instance.progressAnimationType) {
+	        	instance._internalVariables.setVariable("progressAnimationType");
+			}
+			if (prevVars.maxFileChars != instance.maxFileChars) {
+	        	instance._internalVariables.setVariable("maxFileChars");
+			}
+			if (prevVars.uploadedFiles != instance.uploadedFiles) {
+	        	instance._internalVariables.setVariable("uploadedFiles");
+			}
+			if (prevVars.rtl != instance.rtl) {
+	        	instance._internalVariables.setVariable("rtl");
+			}
+	        instance._internalVariables.setVariable();
 
+	        prevVars.acceptOnlyFilesTypes = instance.acceptOnlyFilesTypes;
+	        prevVars.showUploadedFiles = instance.showUploadedFiles;
+	        prevVars.disabled = instance.disabled;
+	        prevVars.enableDropFiles = instance.enableDropFiles;
+	        prevVars.maxFiles = instance.maxFiles;
+	        prevVars.progressAnimationType = instance.progressAnimationType;
+	        prevVars.maxFileChars = instance.maxFileChars;
+	        prevVars.uploadedFiles = instance.uploadedFiles;
+	        prevVars.rtl = instance.rtl;
+	        
+	    	noJquery.extend(prevServerScripts, instance.serverScripts);
+	    	instance.serverScripts = prevServerScripts;
+	    	
+			setTimeout (function () {
+				setVariablesTimeout();
+			}, 3000);
+		}
+		setTimeout (function () {
+			setVariablesTimeout();
+		}, 250);
+	}
 
 	//
 	//
@@ -360,21 +427,21 @@ function SlashUploader (element, opts) {
 		}
 
 		if (instance.opts != null) {
-			$.extend(instance.errors, instance.opts.errors);
+			noJquery.extend(instance.errors, instance.opts.errors);
 			delete instance.opts.errors;
-			$.extend(instance.serverScripts, instance.opts.serverScripts);
+			noJquery.extend(instance.serverScripts, instance.opts.serverScripts);
 			delete instance.opts.serverScripts;
-			$.extend(instance, instance.opts);
+			noJquery.extend(instance, instance.opts);
 		}
 
-		if (instance.elements.containerElement.get(0) != null) {
+		if (instance.elements.containerElement != null) {
 
 			var curElementToTest = instance.elements.containerElement;
-			var curElementToTestTag = curElementToTest.prop("tagName").toUpperCase();
+			var curElementToTestTag = curElementToTest.tagName.toUpperCase();
 			var containedInForm = false;
 			while (curElementToTestTag != "BODY" && !containedInForm) {
-				curElementToTest = curElementToTest.parent();
-				curElementToTestTag = curElementToTest.prop("tagName").toUpperCase();
+				curElementToTest = curElementToTest.parentElement;
+				curElementToTestTag = curElementToTest.tagName.toUpperCase();
 				if (curElementToTestTag == "FORM") {
 					containedInForm = true;
 				}
@@ -395,7 +462,6 @@ function SlashUploader (element, opts) {
 				    html += '	</div>';
 				    html += '	<div class="uploader_result_wrapper"><div class="uploader_result"></div></div>';
 				    html += '</div>';
-				    //if (instance.progressAnimationType.indexOf("bar") != -1) {
 			    	html += '<div class="uploader_progress_container" style="display: none;">';
 			    	html += '	<table><tr>';
 			    	html += '		<td class="uploader_progress_bar_loading"><div class="uploader_spinner"></div><span></span></td>';
@@ -405,7 +471,6 @@ function SlashUploader (element, opts) {
 			    	html += '		<td class="uploader_progress_bar_text"></td>';
 			    	html += '	</tr></table>';
 			    	html += '</div>';
-				    //}
 			    } else {
 			    	html += '<div class="uploader_drop_area_custom">';
 			    	html += '</div>';
@@ -413,43 +478,44 @@ function SlashUploader (element, opts) {
 			    html += '</form>';
 
 				if (!instance.customHTML) {
-					instance.elements.containerElement.html (html);
+					noJquery(instance.elements.containerElement).html (html);
 				} else {
-					instance.elements.containerElement.css("position", "relative");
-					instance.elements.containerElement.html (html+instance.elements.containerElement.html());
+					noJquery(instance.elements.containerElement).css("position", "relative");
+					noJquery(instance.elements.containerElement).html(html+noJquery(instance.elements.containerElement).html());
 				}
-				instance.elements.containerElement.addClass("slash_uploader");
+				noJquery(instance.elements.containerElement).addClass("slash_uploader");
 
-				if (instance.customHTML || (IEVersion >= 0 && IEVersion <= 8)) {
-					$(instance.elements.containerElement).mousemove(function( event ) {
-						var element = $(this);
-						if ($(this).find(".uploader_drop_area_wrapper").get(0) != null) {
-							element = $(this).find(".uploader_drop_area_wrapper");
+				if (
+					instance.customHTML
+					|| (IEVersion >= 0 && IEVersion <= 8)
+					) {
+					noJquery(instance.elements.containerElement).on("mousemove", function(event) {
+						var element = this;
+						if (noJquery(this).find(".uploader_drop_area_wrapper")[0] != null) {
+							element = noJquery(this).find(".uploader_drop_area_wrapper")[0];
 						}
-						instance.elements.uploaderDropAreaElement.find("input").css({
-												            left: event.pageX-element.offset().left-120,
-												            top: event.pageY-element.offset().top-20
-												        });
+						noJquery(instance.elements.uploaderDropAreaElement).find("input").css("left", event.pageX-noJquery(element).offset().left-120);
+						noJquery(instance.elements.uploaderDropAreaElement).find("input").css("top", event.pageY-noJquery(element).offset().top-20);
 					});
 				}
 				
 			    if (!instance.customHTML) {
-					instance.elements.uploaderDropAreaElement = $(instance.elements.containerElement).find(".uploader_drop_area");
+					instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").get(0);
 				} else {
-					instance.elements.uploaderDropAreaElement = $(instance.elements.containerElement).find(".uploader_drop_area_custom");
+					instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_custom").get(0);
 				}
-				instance.elements.uploaderTextElement = $(instance.elements.containerElement).find(".uploader_drop_area").find(".uploader_text span");
-				instance.elements.uploaderDropAreaWrapper = $(instance.elements.containerElement).find(".uploader_drop_area_wrapper");
-				instance.elements.uploaderDropAreaBottomLayerElement = $(instance.elements.containerElement).find(".uploader_drop_area_bottom");
-				instance.elements.uploaderDropAreaMiddleLayerElement = $(instance.elements.containerElement).find(".uploader_drop_area_middle");
-				instance.elements.uploaderResultElement = $(instance.elements.containerElement).find(".uploader_result");
-				instance.elements.uploaderResultWrapperElement = $(instance.elements.containerElement).find(".uploader_result_wrapper");
-				instance.elements.uploaderProgressContainerElement = $(instance.elements.containerElement).find(".uploader_progress_container");
-				instance.elements.uploaderProgressBarElement = $(instance.elements.containerElement).find(".uploader_progress_bar");
-				instance.elements.uploaderProgressBarPaddingElement = $(instance.elements.containerElement).find(".uploader_progress_bar_padding");
-				instance.elements.uploaderProgressBarTextElement = $(instance.elements.containerElement).find(".uploader_progress_bar_text");
-				instance.elements.uploaderProgressBarColorElement = $(instance.elements.containerElement).find(".uploader_progress_container .uploader_progress_bar div div");
-				instance.elements.uploaderCancelButton = $(instance.elements.containerElement).find(".uploader_cancel");
+				instance.elements.uploaderTextElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").find(".uploader_text span").get(0);
+				instance.elements.uploaderDropAreaWrapper = noJquery(instance.elements.containerElement).find(".uploader_drop_area_wrapper").get(0);
+				instance.elements.uploaderDropAreaBottomLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_bottom").get(0);
+				instance.elements.uploaderDropAreaMiddleLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_middle").get(0);
+				instance.elements.uploaderResultElement = noJquery(instance.elements.containerElement).find(".uploader_result").get(0);
+				instance.elements.uploaderResultWrapperElement = noJquery(instance.elements.containerElement).find(".uploader_result_wrapper").get(0);
+				instance.elements.uploaderProgressContainerElement = noJquery(instance.elements.containerElement).find(".uploader_progress_container").get(0);
+				instance.elements.uploaderProgressBarElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar").get(0);
+				instance.elements.uploaderProgressBarPaddingElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar_padding").get(0);
+				instance.elements.uploaderProgressBarTextElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar_text").get(0);
+				instance.elements.uploaderProgressBarColorElement = noJquery(instance.elements.containerElement).find(".uploader_progress_container .uploader_progress_bar div div").get(0);
+				instance.elements.uploaderCancelButton = noJquery(instance.elements.containerElement).find(".uploader_cancel").get(0);
 				
 
 				instance._internalVariables.buildFileInput ();
@@ -458,7 +524,7 @@ function SlashUploader (element, opts) {
 				instance._internalVariables.setDocumentEvents();
 				instance._internalVariables.setDropFileEvents();
 				instance._internalVariables.showCurrentFiles();
-				instance.elements.uploaderCancelButton.on("click", function () {
+				noJquery(instance.elements.uploaderCancelButton).on("click", function () {
 					instance.cancelUpload();
 				});
 				instance._internalVariables.validateIframeGatewayPath();
@@ -481,25 +547,25 @@ function SlashUploader (element, opts) {
 				instance.progressAnimationType = "";
 			}
 		    if (instance.progressAnimationType.indexOf("bar") != -1) {
-		        $(instance.elements.containerElement).addClass("loading_bar");
+		        noJquery(instance.elements.containerElement).addClass("loading_bar");
 		        if (instance._internalVariables.isUploading && instance.elements.uploaderProgressContainerElement != null) {
-		        	instance.elements.uploaderProgressContainerElement.css("display", "");
+		        	noJquery(instance.elements.uploaderProgressContainerElement).css("display", "");
 		        }
 		    } else {
-		    	$(instance.elements.containerElement).removeClass("loading_bar");
+		    	noJquery(instance.elements.containerElement).removeClass("loading_bar");
 		        if (instance.elements.uploaderProgressContainerElement != null) {
-			    	instance.elements.uploaderProgressContainerElement.css("display", "none");
+			    	noJquery(instance.elements.uploaderProgressContainerElement).css("display", "none");
 			    }
 		    }
 
 		    if (instance.elements.uploaderDropAreaBottomLayerElement != null) {
 				if (instance.progressAnimationType.indexOf("inline") != -1 && instance._internalVariables.isUploading
 					&& (instance._internalVariables.getUploadType() == "chunks" || instance._internalVariables.getUploadType() == "stream")) {
-					instance.elements.uploaderDropAreaBottomLayerElement.css("display", "");
-					instance.elements.uploaderDropAreaMiddleLayerElement.css("display", "");
+					noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("display", "");
+					noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("display", "");
 				} else {
-					instance.elements.uploaderDropAreaBottomLayerElement.css("display", "none");
-					instance.elements.uploaderDropAreaMiddleLayerElement.css("display", "none");
+					noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("display", "none");
+					noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("display", "none");
 				}
 		    }
 
@@ -517,7 +583,7 @@ function SlashUploader (element, opts) {
     		var fileExtension = fileData.extension;
     		var fileSize = fileData.size/1024;
     		
-    		if(instance.allowedFilesExtensions != null && instance.allowedFilesExtensions.length > 0 && $.inArray(fileExtension.toLowerCase(), instance.allowedFilesExtensions) == -1){
+    		if(instance.allowedFilesExtensions != null && instance.allowedFilesExtensions.length > 0 && noJquery.inArray(fileExtension.toLowerCase(), instance.allowedFilesExtensions) == -1){
     			errors.push({error: 'invalid_file_extension', file: fileData});
     		} else if (instance.allowedMaxFileSize != null && instance.allowedMaxFileSize > 0 && fileSize > instance.allowedMaxFileSize) {
     			errors.push({error: 'invalid_file_size', file: fileData});
@@ -545,10 +611,10 @@ function SlashUploader (element, opts) {
 	this._internalVariables.buildFileInput = function () {
 	    
 		var instance = this.instance;
-		instance.elements.uploaderDropAreaElement.find(".input_wrapper").remove();
-		instance.elements.uploaderDropAreaElement.append( $("<div class='input_wrapper'><input name='"+instance.elements.elementId+"_input' type='file' "+((instance.maxFiles > 1) ? "multiple" : "")+" /></div>") );
+		noJquery(instance.elements.uploaderDropAreaElement).find(".input_wrapper").remove();
+		noJquery(instance.elements.uploaderDropAreaElement).append( noJquery("<div class='input_wrapper'><input name='"+instance.elements.elementId+"_input' type='file' "+((instance.maxFiles > 1) ? "multiple" : "")+" /></div>")[0] );
 
-	    var filesUpload = $(instance.elements.containerElement).find("input").get(0);
+	    var filesUpload = noJquery(instance.elements.containerElement).find("input")[0];
 	    if (filesUpload != null) {
 	        filesUpload.onchange = function () {
 
@@ -569,12 +635,11 @@ function SlashUploader (element, opts) {
 	        		curFiles = [curFile];
 	        	}
 
-				instance.elements.uploaderDropAreaElement.find("input").css("display", "none");
+				noJquery(instance.elements.uploaderDropAreaElement).find("input").css("display", "none");
 	        	
 	            if (!instance._internalVariables.isUploading) {
 
 	                if (curFiles) {
-	                    //instance._internalVariables.curUploadingFiles = curFiles;
 	                    instance._internalVariables.curUploadingFilesData = [];
 	                    for (var i=0; i<curFiles.length; i++) {
 	                    	var curFile = curFiles[i];
@@ -600,25 +665,28 @@ function SlashUploader (element, opts) {
 	        }
 
 	    }
-	    instance.elements.uploaderInputElement = $(instance.elements.containerElement).find("input");
+	    instance.elements.uploaderInputElement = noJquery(instance.elements.containerElement).find("input")[0];
 	    instance._internalVariables.setVariable("acceptOnlyFilesTypes");
 	    instance._internalVariables.setVariable("showUploadedFiles");
 	    instance._internalVariables.setVariable("disabled");
 	    instance._internalVariables.setVariable("rtl");
 	    instance._internalVariables.checkDragFileStates ();
+
 	}
 
 	this._internalVariables.showUploadBtn = function () {
+
 		var instance = this.instance;
-		instance.elements.uploaderDropAreaBottomLayerElement.css("display", "none");
-		instance.elements.uploaderDropAreaMiddleLayerElement.css("display", "none");
-		instance.elements.uploaderDropAreaElement.removeClass("uploading");
-        $(instance.elements.containerElement).find("input").attr("onclick", "");
+		noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("display", "none");
+		noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("display", "none");
+		noJquery(instance.elements.containerElement).removeClass("uploading");
+        noJquery(instance.elements.containerElement).find("input").attr("onclick", "");
         instance._internalVariables.setText();
 		instance._internalVariables.buildFileInput ();
-		instance.elements.uploaderProgressContainerElement.css("display", "none");
-		instance.elements.uploaderProgressBarColorElement.css("width", "0%");
-		instance.elements.uploaderCancelButton.css("display", "none");
+		noJquery(instance.elements.uploaderProgressContainerElement).css("display", "none");
+		noJquery(instance.elements.uploaderProgressBarColorElement).css("width", "0%");
+		noJquery(instance.elements.uploaderCancelButton).css("display", "none");
+
 	}
 
 	//
@@ -631,13 +699,13 @@ function SlashUploader (element, opts) {
 
 		var instance = this.instance;
 		if (instance.elements.uploaderDropAreaElement != null) {
-
-			instance.elements.uploaderDropAreaElement.unbind("dragleave");
-			instance.elements.uploaderDropAreaElement.unbind ("dragenter, dragover");
-			instance.elements.uploaderDropAreaElement.unbind ("drop");
-
+			
+			noJquery(instance.elements.uploaderDropAreaElement).unbind ("dragleave");
+			noJquery(instance.elements.uploaderDropAreaElement).unbind ("dragenter, dragover");
+			noJquery(instance.elements.uploaderDropAreaElement).unbind ("drop");
+			
 			if (instance._internalVariables.isDropFilesEnabled()) {
-				instance.elements.uploaderDropAreaElement.bind("dragleave", function (evt) {
+				noJquery(instance.elements.uploaderDropAreaElement).on("dragleave", function (evt) {
 					if (!instance.disabled) {
 						instance._internalVariables.draggedOnBtn = false;
 						instance._internalVariables.checkDragFileStates ();
@@ -646,8 +714,8 @@ function SlashUploader (element, opts) {
 					}
 				});
 				
-				instance.elements.uploaderDropAreaElement.bind ("dragenter, dragover", function (evt) {
-					if (!instance.disabled && !instance._internalVariables.isUploading) {
+				noJquery(instance.elements.uploaderDropAreaElement).on ("dragenter, dragover", function (evt) {
+					if (!instance.disabled && !instance._internalVariables.isUploading && instance._internalVariables.isDropFilesEnabled()) {
 						if (evt.originalEvent.dataTransfer.types[0] == "Files" || evt.originalEvent.dataTransfer.types[0] == "text/uri-list" || evt.originalEvent.dataTransfer.types[0] == "application/x-moz-file") {
 							instance._internalVariables.draggedOnBtn = true;
 							instance._internalVariables.checkDragFileStates ()
@@ -657,13 +725,12 @@ function SlashUploader (element, opts) {
 					}
 				});
 				
-				instance.elements.uploaderDropAreaElement.bind ("drop", function (evt) {
-					if (!instance.disabled && !instance._internalVariables.isUploading) {
+				noJquery(instance.elements.uploaderDropAreaElement).on ("drop", function (evt) {
+					if (!instance.disabled && !instance._internalVariables.isUploading && instance._internalVariables.isDropFilesEnabled()) {
 						instance._internalVariables.draggedOnBtn = false;
 						instance._internalVariables.draggedOnDocument = false;
 						instance._internalVariables.checkDragFileStates ();
 						var curFiles = evt.originalEvent.dataTransfer.files;
-			            //instance._internalVariables.curUploadingFiles = curFiles;
 
 			            instance._internalVariables.curUploadingFilesData = [];
 	                    for (var i=0; i<curFiles.length; i++) {
@@ -672,15 +739,22 @@ function SlashUploader (element, opts) {
 	                    }
 
 			            instance._internalVariables.totalFilesToUpload = Math.min(curFiles.length, instance.maxFiles);
-			            instance.elements.uploaderDropAreaElement.find("input").css("display", "none");
+			            noJquery(instance.elements.uploaderDropAreaElement).find("input").css("display", "none");
 
 			            if (instance._internalVariables.getUploadType() == "iframe") {
 
-				        	instance.elements.uploaderDropAreaElement.find("input").prop("files", evt.originalEvent.dataTransfer.files);
+				        	noJquery(instance.elements.uploaderDropAreaElement).find("input")[0].files = evt.originalEvent.dataTransfer.files;
 				        	// Triggers "onchange"
 				        	if (!instance._internalVariables.onChangeTriggered) { // Firefox don't trigger onchange when setting the input value
 				        		setTimeout(function () {
-				        			instance.elements.uploaderDropAreaElement.find("input").change();
+
+				        			try {
+										var event = new Event('change');
+										noJquery(instance.elements.uploaderDropAreaElement).find("input")[0].dispatchEvent(event);
+				        			} catch (e) {
+
+				        			}
+
 				        		}, 1);
 				        	}
 				        } else {
@@ -707,7 +781,7 @@ function SlashUploader (element, opts) {
 			}, false);
 
 			document.addEventListener("dragover", function (evt) {
-				if (!instance.disabled && !instance._internalVariables.isUploading && instance._internalVariables.isDropFilesEnabled()) {
+				if (!instance.disabled) {
 					if (evt.dataTransfer.types[0] == "Files" || evt.dataTransfer.types[0] == "text/uri-list" || evt.dataTransfer.types[0] == "application/x-moz-file") {
 						if (evt.dataTransfer){
 							evt.dataTransfer.dropEffect = 'none';
@@ -738,7 +812,7 @@ function SlashUploader (element, opts) {
 				}
 			} , false);
 			
-			$("body").mouseleave(function(){
+			noJquery("body").on("mouseleave", function(){
 				instance._internalVariables.draggedOnDocument = false;
 				instance._internalVariables.draggedOnBtn = false;
 				if (!instance.disabled && !instance._internalVariables.isUploading && instance._internalVariables.isDropFilesEnabled()) {
@@ -758,17 +832,17 @@ function SlashUploader (element, opts) {
 
 			if (!instance.disabled && !instance._internalVariables.isUploading) {
 				
-				instance.elements.uploaderDropAreaElement.removeClass("dragged_enter");
-				instance.elements.uploaderDropAreaElement.removeClass("dragged_over");
-				instance.elements.uploaderDropAreaElement.removeClass("hover");
-				instance.elements.uploaderDropAreaElement.removeClass("uploading");
+				noJquery(instance.elements.containerElement).removeClass("dragged_enter");
+				noJquery(instance.elements.containerElement).removeClass("dragged_over");
+				noJquery(instance.elements.containerElement).removeClass("hover");
+				noJquery(instance.elements.containerElement).removeClass("uploading");
 
 				if (instance._internalVariables.draggedOnBtn) {
-					instance.elements.uploaderDropAreaElement.addClass("dragged_over");
+					noJquery(instance.elements.containerElement).addClass("dragged_over");
 				} else if (instance._internalVariables.draggedOnDocument) {
-					instance.elements.uploaderDropAreaElement.addClass("dragged_enter");
+					noJquery(instance.elements.containerElement).addClass("dragged_enter");
 				} else if (instance._internalVariables.hoverOnBtn) {
-					instance.elements.uploaderDropAreaElement.addClass("hover");
+					noJquery(instance.elements.containerElement).addClass("hover");
 				}
 				
 			}
@@ -802,29 +876,31 @@ function SlashUploader (element, opts) {
 			if (!instance.disabled && !instance._internalVariables.isUploading) {
 				
 				if (instance._internalVariables.draggedOnBtn) {
-					instance.elements.uploaderTextElement.find('span').html(instance.dropFilesText);
+					noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
 				} else if (instance._internalVariables.draggedOnDocument) {
-					instance.elements.uploaderTextElement.find('span').html(instance.dropFilesText);
+					noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
 				} else if (instance._internalVariables.hoverOnBtn) {
-					instance.elements.uploaderTextElement.find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
+					noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
 				} else {
-					instance.elements.uploaderTextElement.find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
+					noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
 				}
-				instance.elements.uploaderTextElement.find('.uploader_spinner').css("display", "none");
+				noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "none");
 
 			} else if (instance._internalVariables.isUploading) {
-        		instance.elements.uploaderTextElement.find('span').html(instance._internalVariables.getUploadingText());
-        		instance.elements.uploaderTextElement.find('.uploader_spinner').css("display", "");
+        		noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.getUploadingText());
+        		noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "");
 			} else {
-				instance.elements.uploaderTextElement.find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
-        		instance.elements.uploaderTextElement.find('.uploader_spinner').css("display", "none");
+				noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
+        		noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "none");
 			}
-			instance.elements.uploaderCancelButton.find('span').html(instance.cancelText);
+
+			noJquery(instance.elements.uploaderCancelButton).find('span').html(instance.cancelText);
 		}
 
 	}
 
 	this._internalVariables.getUploadingText = function () {
+
 
 		var instance = this.instance;
         var text = "";
@@ -876,32 +952,6 @@ function SlashUploader (element, opts) {
 	//	Upload Functions
 	//
 	//
-	/*
-    this._internalVariables.traverseFiles = function () {
-
-		var instance = this.instance;
-		if (typeof instance._internalVariables.curUploadingFiles !== "undefined" && instance._internalVariables.curUploadingFiles.length > 0) {
-			var errors = instance._internalVariables.validateFiles(instance._internalVariables.curUploadingFiles);
-			if (errors.length == 0) {
-				if (typeof (instance.onFilesSelected) == "function") {
-	        		instance.onFilesSelected (instance._internalVariables.curUploadingFiles);
-	        	}
-            	instance._internalVariables.curUploadingFilesData = [];
-            	if (instance.resetFilesOnEachUpload) {
-                	instance.uploadedFiles = [];
-            	}
-                instance._internalVariables.curUploadingFileIndex = 0;
-                setTimeout(function () { // Using timeout because geting exif might be heavy
-					instance._internalVariables.getFileMetadata ();
-                }, 2);
-			} else {
-	    		instance._internalVariables.parseErrors(errors);
-	    	}
-
-		}
-
-	}
-	*/
 
     this._internalVariables.traverseFiles = function () {
 
@@ -919,8 +969,10 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.getFilesMetadata = function () {
+
 		var instance = this.instance;
 		instance._internalVariables.getNextFileMetadata();
+
 	}
 
 	this._internalVariables.getNextFileMetadata = function () {
@@ -952,32 +1004,48 @@ function SlashUploader (element, opts) {
 
 				setTimeout(function () { // Using timeout because geting exif might be heavy
 					var reader = new FileReader();
+					var image;
+
+					var metadataFailedTimeout = setTimeout(function () {
+						reader.onload = null;
+						if (image != null) {
+							image.onload = null;
+						}
+						instance._internalVariables.consoleError("Failed retrieving meta data for '"+fileName+"'");
+						instance._internalVariables.getFileMetaFinished (file, metadata);
+					}, 400);
+
 			  		reader.onload = function (event) {
-			  			var exifObject = getExifData(event.target.result);
-			  			var imageRotation = 0;
-						if(exifObject) {
-							if (exifObject.Orientation) {
-								if (exifObject.Orientation == 6) {
+			  			instance._internalVariables.getOrientation(event.target.result, function (orientation) {
+			  				var imageRotation = 0;
+							if (orientation > 0) {
+								if (orientation == 5 || orientation == 6) {
 									imageRotation = 90;
-								} else if (exifObject.Orientation == 3) {
+								} else if (orientation == 3 || orientation == 4) {
 									imageRotation = 180;
-								} else if (exifObject.Orientation == 8) {
+								} else if (orientation == 7 || orientation == 8) {
 									imageRotation = 270;
 								}
 							}
-						}
-
+							metadata.rotation = imageRotation;
+			  			});
+			  		}
+			  		reader.onloadend = function (event) {
 			  			var image = new Image();
-					    image.src = event.target.result;
+		  			    var bytes = new Uint8Array(event.target.result);
+		  			    var blob = new Blob([bytes.buffer]);
+						image.src = URL.createObjectURL(blob);
+
+					    //image.src = event.target.result;
 					    image.onload = function() {
-					        metadata.rotation = imageRotation;
+							clearTimeout(metadataFailedTimeout);
 					        metadata.width = this.width;
 					        metadata.height = this.height;
 			  				instance._internalVariables.getFileMetaFinished (file, metadata);
 					    };
-
 			  		}
-			  		reader.readAsDataURL(file);
+			  		reader.readAsArrayBuffer(file);
+			  		//reader.readAsDataURL(file);
 		  		}, 2);
 
 			} else {
@@ -988,7 +1056,6 @@ function SlashUploader (element, opts) {
 		} else if (instance._internalVariables.isVideo(file.name) && instance.doGetFileMetadata) {
 
 			if (typeof(FileReader) != "undefined") {
-
 				
 				var video = document.createElement('video');
 				video.preload = 'metadata';
@@ -1036,13 +1103,13 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.getFileMetaFinished = function (file, fileMetadata) {
+
 		var instance = this.instance;
 		var curFileData = instance._internalVariables.curUploadingFilesData[instance._internalVariables.curUploadingFileIndex];
 		curFileData.duration = fileMetadata.duration;
 		curFileData.width = fileMetadata.width;
 		curFileData.height = fileMetadata.height;
 		curFileData.rotation = fileMetadata.rotation;
-		//instance._internalVariables.curUploadingFilesData.push(fileMetadata);
 		var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex+1) || (instance._internalVariables.curUploadingFileIndex+1 >= instance.maxFiles);
 		if (isLastFile) {
 
@@ -1062,52 +1129,36 @@ function SlashUploader (element, opts) {
 			instance._internalVariables.curUploadingFileIndex ++;
 			instance._internalVariables.getNextFileMetadata();
 		}
-	}
-
-	/*
-	this._internalVariables.getFileMetaFinished = function (file, fileMetadata) {
-		var instance = this.instance;
-		if (instance._internalVariables.getUploadType() == "chunks" || instance._internalVariables.getUploadType() == "stream") {
-			instance._internalVariables.uploadFile ([file], fileMetadata);
-		} else {
-			
-			instance._internalVariables.curUploadingFilesData.push(fileMetadata);
-			var isLastFile = (instance._internalVariables.curUploadingFiles.length <= instance._internalVariables.curUploadingFileIndex+1) || (instance._internalVariables.curUploadingFileIndex+1 >= instance.maxFiles);
-			if (isLastFile) {
-				instance._internalVariables.uploadFile (instance._internalVariables.curUploadingFiles, fileMetadata);
-			} else {
-				instance._internalVariables.curUploadingFileIndex ++;
-				instance._internalVariables.getFileMetadata();
-			}
-			
-		}
 
 	}
-	*/
+
 	this._internalVariables.uploadFile = function () {
 
 		var instance = this.instance;
 
-		instance.elements.uploaderDropAreaBottomLayerElement.find("img").attr("src", "");
-		instance.elements.uploaderDropAreaMiddleLayerElement.find("img").attr("src", "");
-		instance.elements.uploaderDropAreaBottomLayerElement.css({transition: 'width 0s', '-webkit-transition': 'width 0s', width: '0px'});
+		noJquery(instance.elements.uploaderDropAreaBottomLayerElement).find("img").attr("src", "");
+		noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).find("img").attr("src", "");
+		noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("transition", "width 0s");
+		noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("-webkit-transition", "width 0s");
+		noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("width", 0);
 		setTimeout(function () {
-			$(instance.elements.uploaderDropAreaBottomLayerElement).css({transition:'width .2s', '-webkit-transition': 'width .2s'});
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("transition", "width .2s");
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("-webkit-transition", "width .2s");
 		}, 10);
 
 		if (instance.progressAnimationType.indexOf("bar") != -1) {
-			instance.elements.uploaderProgressContainerElement.css("display", "");
+			noJquery(instance.elements.uploaderProgressContainerElement).css("display", "");
 		}
 		if (instance._internalVariables.getUploadType() == "iframe") {
-			instance.elements.uploaderProgressBarElement.find("div").css("display", "none");
-			instance.elements.uploaderProgressBarTextElement.css("width", "auto");
-			instance.elements.uploaderProgressBarPaddingElement.css("display", "none");
+			noJquery(instance.elements.uploaderProgressBarElement).find("div").css("display", "none");
+			noJquery(instance.elements.uploaderProgressBarTextElement).css("width", "auto");
+			noJquery(instance.elements.uploaderProgressBarPaddingElement).css("display", "none");
 		} else {
-			instance.elements.uploaderProgressBarElement.find("div").css("display", "");
-			instance.elements.uploaderProgressBarTextElement.css("width", "1%");
-			instance.elements.uploaderProgressBarPaddingElement.css("display", "");
+			noJquery(instance.elements.uploaderProgressBarElement).find("div").css("display", "");
+			noJquery(instance.elements.uploaderProgressBarTextElement).css("width", "1%");
+			noJquery(instance.elements.uploaderProgressBarPaddingElement).css("display", "");
 		}
-		instance.elements.uploaderResultElement.removeClass("error");
+		noJquery(instance.elements.uploaderResultElement).removeClass("error");
 		instance._internalVariables.showCurrentFiles();
 		var files = instance._internalVariables.curUploadingFilesData;
 		var fileIndex = instance._internalVariables.curUploadingFileIndex;	
@@ -1119,42 +1170,44 @@ function SlashUploader (element, opts) {
 		}
 		text = text.split("{{total_files}}").join(Math.min(instance._internalVariables.curUploadingFilesData.length, instance.maxFiles));
 		text = text.split("{{current_file_name}}").join(instance._internalVariables.getShortFilename(files[fileIndex].name));
-		instance.elements.uploaderProgressBarTextElement.html(text);
+		noJquery(instance.elements.uploaderProgressBarTextElement).html(text);
 		
 		instance._internalVariables.isUploading = true;
-		instance.elements.uploaderCancelButton.css("display", "block");
+		noJquery(instance.elements.uploaderCancelButton).css("display", "block");
 		instance._internalVariables.setProgressDisplay();
-	    $(instance.elements.containerElement).find("input").attr("onclick", "return false;");
+	    noJquery(instance.elements.containerElement).find("input").attr("onclick", "return false;");
 
 	    instance._internalVariables.setText();
-		instance.elements.uploaderDropAreaElement.removeClass("dragged_enter");
-		instance.elements.uploaderDropAreaElement.removeClass("dragged_over");
-		instance.elements.uploaderDropAreaElement.removeClass("hover");
-		instance.elements.uploaderDropAreaElement.addClass("uploading");
+		noJquery(instance.elements.containerElement).removeClass("dragged_enter");
+		noJquery(instance.elements.containerElement).removeClass("dragged_over");
+		noJquery(instance.elements.containerElement).removeClass("hover");
+		noJquery(instance.elements.containerElement).addClass("uploading");
 
-		instance.elements.uploaderDropAreaBottomLayerElement.find("img").css("width", instance.elements.uploaderDropAreaElement.outerWidth());
-		instance.elements.uploaderDropAreaMiddleLayerElement.find("img").css("width", instance.elements.uploaderDropAreaElement.outerWidth());
+		noJquery(instance.elements.uploaderDropAreaBottomLayerElement).find("img").css("width", noJquery(instance.elements.uploaderDropAreaElement).outerWidth());
+		noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).find("img").css("width", noJquery(instance.elements.uploaderDropAreaElement).outerWidth());
 		var imgTempUrl = null;
 		if (typeof(URL) != "undefined") {
 			imgTempUrl = URL.createObjectURL(files[fileIndex].file);
 		}
 
 		if (imgTempUrl != null && imgTempUrl != "" && instance._internalVariables.isImg(files[fileIndex].name)) {
-			instance.elements.uploaderDropAreaBottomLayerElement.find("img").attr("src", imgTempUrl).css("display", "");
-			instance.elements.uploaderDropAreaMiddleLayerElement.find("img").attr("src", imgTempUrl).css("display", "");
-			instance.elements.uploaderDropAreaBottomLayerElement.css("opacity", "0");
-			instance.elements.uploaderDropAreaBottomLayerElement.find("img").unbind("load");
-			instance.elements.uploaderDropAreaBottomLayerElement.find("img").bind("load", function() {
-				$(this).parent().animate({opacity: 1}, 400);
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).find("img").attr("src", imgTempUrl).css("display", "");
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).find("img").attr("src", imgTempUrl).css("display", "");
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("opacity", "0");
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).find("img").unbind("load");
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).find("img").on("load", function() {
+				noJquery(this).parent().animate({opacity: 1}, 400);
 			});
-			instance.elements.uploaderDropAreaMiddleLayerElement.css("opacity", "0");
-			instance.elements.uploaderDropAreaMiddleLayerElement.find("img").unbind("load");
-			instance.elements.uploaderDropAreaMiddleLayerElement.find("img").bind("load", function() {
-				$(this).parent().animate({opacity: 1}, 400);
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("opacity", "0");
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).find("img").unbind("load");
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).find("img").on("load", function() {
+				noJquery(this).parent().animate({opacity: 1}, 400);
 			});
 		} else {
-			instance.elements.uploaderDropAreaBottomLayerElement.find("img").attr("src", "").css("display", "none");
-			instance.elements.uploaderDropAreaMiddleLayerElement.find("img").attr("src", "").css("display", "none");
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).find("img").attr("src", "").css("display", "none");
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).find("img").attr("src", "").css("display", "none");
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).animate({opacity: 1}, 400);
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).animate({opacity: 1}, 400);
 		}
 				
 		var script = "";
@@ -1190,7 +1243,11 @@ function SlashUploader (element, opts) {
 					try {
 				        instance._internalVariables.curUploadingFileIndex ++;
 				        var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
-				        var jsonObj = jQuery.parseJSON(result);
+				        if (isLastFile) {
+				        	//instance._internalVariables.curUploadingFileIndex = Math.min(instance._internalVariables.curUploadingFilesData.length, instance.maxFiles)-1;
+				        	instance._internalVariables.curUploadingFileIndex --;
+				        }
+				        var jsonObj = JSON.parse(result);
 
 				        function parseUploadResult () {
 				        	instance._internalVariables.parseUploadResult (jsonObj, isLastFile, files[fileIndex].file);
@@ -1200,14 +1257,14 @@ function SlashUploader (element, opts) {
 				            }
 				        }
 				        
-				        if (instance.elements.uploaderDropAreaBottomLayerElement.get(0) != null) {
-						    instance.elements.uploaderDropAreaBottomLayerElement.animate({opacity: 0}, 200, function () {
+				        if (instance.elements.uploaderDropAreaBottomLayerElement != null) {
+						    noJquery(instance.elements.uploaderDropAreaBottomLayerElement).animate({opacity: 0}, 200, function () {
 						    	parseUploadResult();
 						    });
 				        } else {
 				        	parseUploadResult();
 				        }
-					    instance.elements.uploaderDropAreaMiddleLayerElement.animate({opacity: 0}, 200);
+					    noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).animate({opacity: 0}, 200);
 					} catch (err) {
 						instance._internalVariables.setError('upload_failed', files[fileIndex], result);
 			        	instance._internalVariables.uploadFileChunkXhr = null;
@@ -1248,15 +1305,16 @@ function SlashUploader (element, opts) {
 					script,
 					window.location.href.substr(0, window.location.href.lastIndexOf("/"))+"/"+instance.iframeGateway,
 					function (data) {
+						instance._internalVariables.curUploadingFileIndex = instance._internalVariables.totalFilesToUpload-1;
 						instance._internalVariables.onFileProgress (1);
-						if ($(instance.elements.uploaderDropAreaBottomLayerElement).get(0) == null) {
+						if (instance.elements.uploaderDropAreaBottomLayerElement == null) {
 							instance._internalVariables.parseUploadResult (data, true, null);
 						} else {
-							instance.elements.uploaderDropAreaBottomLayerElement.animate({opacity: 0}, 200, function () {
+							noJquery(instance.elements.uploaderDropAreaBottomLayerElement).animate({opacity: 0}, 200, function () {
 								instance._internalVariables.parseUploadResult (data, true, null);
 							});
 						}
-						instance.elements.uploaderDropAreaMiddleLayerElement.animate({opacity: 0}, 200, function () {
+						noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).animate({opacity: 0}, 200, function () {
 						});
 
 					}
@@ -1295,7 +1353,7 @@ function SlashUploader (element, opts) {
 					var hasError = false;
 					try {
 
-						var result = jQuery.parseJSON(this.response);
+						var result = JSON.parse(this.response);
 						for (var i=0; i<result.length; i++) {
 							if (result[i][instance.serverScripts.errorVariableName] != null && result[i][instance.serverScripts.errorVariableName] != "") {
 								instance._internalVariables.setError('upload_failed', file, result[i]);
@@ -1306,7 +1364,6 @@ function SlashUploader (element, opts) {
 
 					} catch (err) {
 					}
-					
 					if (hasError) {
 						instance._internalVariables.abortAndCancelUpload();
 					} else {
@@ -1339,17 +1396,18 @@ function SlashUploader (element, opts) {
 		var scriptToPost = script.split("{{file_name}}").join(file.name).split("{{chunk_index}}").join(index).split("{{request_id}}").join(uploaderId);
 		xhr.open("POST", scriptToPost);
         xhr.send(chunk);
+
 	}
 
 	this._internalVariables.uploadFileInChunksComplete = function (file, uploaderId) {
 
 		var instance = this.instance;
 		var script = instance.serverScripts.combineChunks.split("{{file_name}}").join(file.name).split("{{request_id}}").join(uploaderId).split("{{rotation}}").join(file.rotation);
-		instance._internalVariables.uploadFileChunkXhr = $.ajax({
-			url: script,
-        	dataType: 'jsonp',
-			success: function(data) {
 
+		instance._internalVariables.uploadFileChunkXhr = noJquery.ajax ({
+			url: script,
+			dataType: 'jsonp',
+			success: function(data) {
 				instance._internalVariables.curUploadingFileIndex ++;
 	            var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
 	            instance._internalVariables.parseUploadResult (data, isLastFile, file);
@@ -1357,7 +1415,6 @@ function SlashUploader (element, opts) {
 	                instance._internalVariables.uploadFile ();
 	            }
 	        	instance._internalVariables.uploadFileChunkXhr = null;
-
 			},
 			error: function(jqXHR, exception) {
 				if (exception === 'abort') {
@@ -1380,11 +1437,11 @@ function SlashUploader (element, opts) {
 		if (instance.progressAnimationType.indexOf("bar") != -1) {
 			var eachFileProgress = 100/totalFiles;
 			var curBarProgress = eachFileProgress*instance._internalVariables.curUploadingFileIndex+eachFileProgress*progress;
-			instance.elements.uploaderProgressBarColorElement.css("width", ((curBarProgress) + "%"));
+			noJquery(instance.elements.uploaderProgressBarColorElement).css("width", ((curBarProgress) + "%"));
 		}
 		if (instance.progressAnimationType.indexOf("inline") != -1) {
-			instance.elements.uploaderDropAreaBottomLayerElement.css("width", Math.ceil(progress*100)+"%");
-			instance.elements.uploaderDropAreaMiddleLayerElement.css("width", instance.elements.uploaderDropAreaElement.outerWidth());
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("width", Math.ceil(progress*100)+"%");
+			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("width", noJquery(instance.elements.uploaderDropAreaElement).outerWidth());
 		}
 
 	}
@@ -1400,6 +1457,7 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.abortAndCancelUpload = function () {
+
 		var instance = this.instance;
 		instance._internalVariables.curUploadingFilesData = [];
 		if (instance._internalVariables.uploadFileChunkXhr != null) {
@@ -1411,6 +1469,7 @@ function SlashUploader (element, opts) {
     	if (instance._internalVariables.getUploadType() == "iframe") {
 	    	uploaerIframeGateway.cancelUpload (instance.elements.elementId, instance.iframeGateway);
 	    }
+
 	}
 
 	//
@@ -1446,7 +1505,6 @@ function SlashUploader (element, opts) {
 		
 	}
 
-
 	this._internalVariables.showCurrentFiles = function() {
 
 		var instance = this.instance;
@@ -1455,7 +1513,7 @@ function SlashUploader (element, opts) {
 			clearTimeout(instance._internalVariables.displayErrorAnimationTimeoutDuration);
 			var deleteBtnStr = "<a class='uploader_delete_btn' data-index='{{index}}' href='javascript: void(0);'><div></div></a>";
 		    if (instance.uploadedFiles == null || instance.uploadedFiles.length == 0) {
-		    	instance.elements.uploaderResultElement.html("");
+		    	noJquery(instance.elements.uploaderResultElement).html("");
 		    } else {
 
 		    	var filesListHtml = "";
@@ -1470,18 +1528,19 @@ function SlashUploader (element, opts) {
 						filesListHtml += "<div class='uploader_result_file'>"+deleteBtnStr.split("{{index}}").join(i)+"&nbsp;"+fileNameStr+"</div>";
 			        }
 		    	}
-		    	instance.elements.uploaderResultElement.html(filesListHtml);
+		    	noJquery(instance.elements.uploaderResultElement).html(filesListHtml);
 		    	
 		    }
 
-	        $(instance.elements.containerElement).find(".uploader_delete_btn").click(function () {
-	        	if (!instance.disabled) {
-	            	instance._internalVariables.deleteFile ($(this).attr("data-index"));
-	        	}
-	        });
-	        instance.elements.uploaderResultElement.fadeIn();
-
-
+		    var deleteBtns = instance.elements.containerElement.querySelectorAll(".uploader_delete_btn");
+		    for (var i=0; i<deleteBtns.length; i++) {
+		        noJquery(deleteBtns.item(i)).on("click", function () {
+		        	if (!instance.disabled) {
+		            	instance._internalVariables.deleteFile (noJquery(this).attr("data-index"));
+		        	}
+		        });
+		    }
+	        noJquery(instance.elements.uploaderResultElement).fadeIn();
 		}
 		
 	}
@@ -1501,13 +1560,16 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.setError = function (error, file, errorObject) {
+
 		var instance = this.instance;
 		var errors = [];
     	errors.push({error: error, file: file, error_object: errorObject});
 		instance._internalVariables.parseErrors(errors);
+
 	}
 
 	this._internalVariables.parseErrors = function (errors) {
+
 		var instance = this.instance;
 		var errorStr = "";
 		for (var i=0; i<errors.length; i++) {
@@ -1518,7 +1580,13 @@ function SlashUploader (element, opts) {
 			} else if (curError.error == "invalid_file_size") {
 				curErrorText = instance.errors.invalidFileSize;
 			} else if (curError.error == "upload_failed") {
-				curErrorText = instance.errors.uploadFailed;
+
+				if (instance.showDetailedErrorFromServer && curError.error_object != null && curError.error_object.error != null && curError.error_object.error != "") {
+					curErrorText = curError.error_object.error;
+				} else {
+					curErrorText = instance.errors.uploadFailed;
+				}
+
 			} else if (curError.error_text != null) {
 				curErrorText = curError.error_text;
 			} else {
@@ -1536,8 +1604,10 @@ function SlashUploader (element, opts) {
 				errorStr += curErrorText;
 			}
 		}
-		instance.elements.uploaderResultElement.addClass("error");
-		instance.elements.uploaderResultElement.html(errorStr).stop().css("display", "none").fadeIn();
+		noJquery(instance.elements.uploaderResultElement).addClass("error");
+		//$(instance.elements.uploaderResultElement).html(errorStr).stop().css("display", "none").fadeIn();
+		noJquery(instance.elements.uploaderResultElement).html(errorStr).css("opacity", "0").fadeIn();
+
 		instance._internalVariables.abortAndCancelUpload();
 		if (typeof (instance.onError) == "function") {
     		instance.onError (errors);
@@ -1546,10 +1616,11 @@ function SlashUploader (element, opts) {
     	instance._internalVariables.checkDragFileStates();
     	clearTimeout(instance._internalVariables.displayErrorAnimationTimeoutDuration);
     	instance._internalVariables.displayErrorAnimationTimeoutDuration = setTimeout(function () {
-    		instance.elements.uploaderResultElement.fadeOut(function () {
+    		noJquery(instance.elements.uploaderResultElement).fadeOut(function () {
     			instance._internalVariables.showCurrentFiles();
     		});
     	}, instance.displayErrorDuration);
+		
 	}
 
 	//
@@ -1557,20 +1628,7 @@ function SlashUploader (element, opts) {
 	//	Utils
 	//
 	//
-	/*
-	this._internalVariables.jsonp = function (url, callback) {
-	    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-	    window[callbackName] = function(data) {
-	        delete window[callbackName];
-	        document.body.removeChild(script);
-	        callback(data);
-	    };
-	    var script = document.createElement('script');
-	    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-	    document.body.appendChild(script);
-	}
-	*/
-
+	
 	this._internalVariables.consoleError = function (errorText) {
 		
 		var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
@@ -1582,12 +1640,14 @@ function SlashUploader (element, opts) {
 				console.log ("%c Uploader: "+errorText, 'background: #222; color: #bada55; padding: 10px;');
 			}
 		}
+
 	}
 
 	this._internalVariables.getUploadType = function () {
 
 		var instance = this.instance;
 		if (instance._internalVariables.canUploadFileInchunks()) {
+			
 			if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream)) {
 				return "chunks";
 			} else {
@@ -1613,6 +1673,7 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.canUploadFileInchunks = function () {
+
 		var instance = this.instance;
 		if (!instance.uploadFileInChunks) {
 			return false;
@@ -1626,6 +1687,7 @@ function SlashUploader (element, opts) {
         	return false;
         }
 		return true;
+
 	}
 
 	this._internalVariables.isCrossDomainScript = function (scriptToTest) {
@@ -1668,35 +1730,42 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.isMobileOrTablet = function() {
+
 		var check = false;
 		(function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})(navigator.userAgent||navigator.vendor||window.opera);
 		return check;
+
 	};
 
 	this._internalVariables.videoFileTypes = [".3gp2", ".3gpp", ".3gpp2", ".asf", ".asx", ".avi", ".flv", ".m4v", ".mkv", ".mov", ".mpeg", ".mpg", ".mpe", ".m1s", ".mpa", ".mp2", ".m2a", ".mp2v", ".m2v", ".m2s", ".mp4", ".ogg", ".rm", ".wmv", ".mp4", ".qt", ".ogm", ".vob", ".webm", ".787", ".ogv"];
 
-	this._internalVariables.imageFileTypes = ['.jpg','.jpeg','.png','.tiff','.bmp'];
+	this._internalVariables.imageFileTypes = [".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".gif"];
 
 	this._internalVariables.isFileType = function (file, curFileTypes) {
 
 		var fileExtension = file.substr(file.lastIndexOf("."), 5);
 		fileExtension = fileExtension.toLowerCase();
-	    var result = ($.inArray(fileExtension.toLowerCase(), curFileTypes) != -1);
+	    var result = (noJquery.inArray(fileExtension.toLowerCase(), curFileTypes) != -1);
 		return result;
 
 	}
 
 	this._internalVariables.isImg = function (file) {
+
 		var instance = this.instance;
 		return instance._internalVariables.isFileType (file, instance._internalVariables.imageFileTypes);
+
 	}
 
 	this._internalVariables.isVideo = function (file) {
+
 		var instance = this.instance;
 		return instance._internalVariables.isFileType (file, instance._internalVariables.videoFileTypes);
+
 	}
 
 	this._internalVariables.isDropFilesEnabled = function () {
+
 		var instance = this.instance;
 		var ua = navigator.userAgent;
 		if (!instance.enableDropFiles) {
@@ -1714,12 +1783,14 @@ function SlashUploader (element, opts) {
 			return false;
 		}
 		return true;
+
 	}
 
 	this._internalVariables.validateIframeGatewayPath = function () {
+
 		var instance = this.instance;
 		var iframeGatewayFullUrl = window.location.href.substr(0, window.location.href.lastIndexOf("/"))+"/"+instance.iframeGateway;
-		$.ajax({
+		noJquery.ajax({
 			type: "HEAD",
 			url: iframeGatewayFullUrl,
 			success: function(data) {
@@ -1728,7 +1799,53 @@ function SlashUploader (element, opts) {
 				instance._internalVariables.consoleError("Iframe gateway can't be found at "+iframeGatewayFullUrl);
 			}
 		});
+
 	};
+
+	this._internalVariables.getOrientation = function (readerResult, callback) {
+
+		view = new DataView(readerResult);
+        if (view.getUint16(0, false) != 0xFFD8)
+        {
+            return callback(-2);
+        }
+        var length = view.byteLength, offset = 2;
+        while (offset < length) 
+        {
+            if (view.getUint16(offset+2, false) <= 8) return callback(-1);
+            var marker = view.getUint16(offset, false);
+            offset += 2;
+            if (marker == 0xFFE1) 
+            {
+                if (view.getUint32(offset += 2, false) != 0x45786966) 
+                {
+                    return callback(-1);
+                }
+
+                var little = view.getUint16(offset += 6, false) == 0x4949;
+                offset += view.getUint32(offset + 4, little);
+                var tags = view.getUint16(offset, little);
+                offset += 2;
+                for (var i = 0; i < tags; i++)
+                {
+                    if (view.getUint16(offset + (i * 12), little) == 0x0112)
+                    {
+                        return callback(view.getUint16(offset + (i * 12) + 8, little));
+                    }
+                }
+            }
+            else if ((marker & 0xFF00) != 0xFF00)
+            {
+                break;
+            }
+            else
+            { 
+                offset += view.getUint16(offset, false);
+            }
+        }
+        return callback(-1);
+
+	}
 
 	//
 	//
@@ -1753,10 +1870,10 @@ var uploaerIframeGateway = {
 	        if (curObj.actionCompletedFunc != null) {
 	            curObj.actionCompletedFunc(params);
 	        }
-	    	$("iframe[data-request='"+iframeIndex+"']").remove();
+	    	noJquery("iframe[data-request='"+iframeIndex+"']").remove();
 	    }
 	},
-
+	
 	uploadViaIframeGateway: function (formElementId, scriptUrl, iframeGatewayUrl, onCompleted) {
 		
 		var requestId = Math.floor(Math.random()*999999999);
@@ -1766,9 +1883,10 @@ var uploaerIframeGateway = {
 	    uploaerIframeGateway.objs[requestId] = iframeObj;
 	    
 	    var iframeId = "uploader_gateway_iframe_"+formElementId;
-	    if ($("#"+iframeId).get(0) == null) {
+	    if (noJquery("#"+iframeId).get(0) == null) {
 	    	var iframeElement = "<iframe id='"+iframeId+"' data-request='"+requestId+"' name='"+iframeId+"' style='width: 1px; height: 1px; opacity: 0; display: none;'>";
-	    	$(iframeElement).appendTo('body');
+	    	noJquery(iframeElement).appendTo('body');
+	    	
 	    }
 	    
 	    var formAction = scriptUrl;
@@ -1783,12 +1901,12 @@ var uploaerIframeGateway = {
 	    	formAction = window.location.protocol+formAction;
 	    }
 
-		$('#'+formElementId)
+		noJquery('#'+formElementId)
 		.attr('action', formAction)
 		.attr('target', iframeId)
 		.attr('enctype', "multipart/form-data")
-		.attr('method', "post");
-		$('#'+formElementId).get(0).submit();
+		.attr('method', "post")
+	    .get(0).submit();
 
 	},
 
@@ -1796,28 +1914,528 @@ var uploaerIframeGateway = {
 		
 	    var iframeId = "uploader_gateway_iframe_"+formElementId;
 	    var formAction = scriptUrl;
-	    if ($("#"+iframeId).get(0) == null) {
+	    if (noJquery("#"+iframeId).get(0) == null) {
 	    	var iframeElement = "<iframe id='"+iframeId+"' name='"+iframeId+"' style='width: 1px; height: 1px; opacity: 0; display: none;'>";
-	    	$(iframeElement).appendTo('body');
+	    	noJquery(iframeElement).appendTo('body');
 	    }
-		$('#'+formElementId)
+		noJquery('#'+formElementId)
 		.attr('action', formAction)
 		.attr('target', iframeId)
 		.attr('enctype', "multipart/form-data")
-		.attr('method', "get");
-		$('#'+formElementId).get(0).submit();
+		.attr('method', "get")
+		.get(0).submit();
 	    
+	}
+	
+
+}
+
+//
+//
+//		noJquery
+//
+//
+
+function noJquery (selector) {
+
+	//
+	//
+	// Get elements
+	if (!(this instanceof noJquery)) {
+	    return new noJquery(selector);
+	}
+	if (typeof selector === 'function') {
+		return selector.call(document);
+	}
+	this.length = 0;
+	this.nodes = [];
+
+	/*if (
+		(typeof HTMLElement === "object" && selector instanceof HTMLElement)
+		||
+		(typeof NodeList != "undefined" && selector instanceof NodeList)
+		) {*/
+	if (
+		typeof HTMLElement === "object" ? selector instanceof HTMLElement : //DOM2
+		selector && typeof selector === "object" && selector !== null && selector.nodeType === 1 && typeof selector.nodeName === "string"
+		) {
+		//[].slice.call(selector);
+	    this.nodes = selector.length > 1 ? [].slice.call(selector) : [selector];
+
+	} else if (typeof selector === 'string') {
+
+	    if (selector.indexOf("<") == 0/* && selector.indexOf(">") == selector.length - 1*/) {
+	        var div = document.createElement('div');
+			div.innerHTML = selector;
+			this.nodes = [div.firstChild];
+	    } else {
+	        //this.nodes = [].slice.call(document.querySelectorAll(selector));
+	        this.nodes = [];
+	        var nodeslist = document.querySelectorAll(selector);
+	        for (var i=0; i<nodeslist.length; i++) {
+	        	this.nodes.push(nodeslist.item(i));
+	        }
+	    }
+	}
+
+	if (this.nodes.length) {
+	    this.length = this.nodes.length;
+	    for (var i = 0; i < this.nodes.length; i++) {
+	        this[i] = this.nodes[i];
+	    }
 	}
 
 }
+noJquery.fn = noJquery.prototype;
+
+//
+//
+// Define functions for elements
+
+noJquery.fn.each = function(callback) {
+    for (var i = 0; i < this.length; i++) {
+        callback.call(this[i], this, i);
+    }
+    return this;
+};
+
+noJquery.fn.hasClass = function(className) {
+	var hasClass = false;
+	for (var i=0; i<this.nodes.length; i++) {
+		if (this.nodes[i].classList) {
+			if (this.nodes[i].classList.contains(className)) {
+				hasClass = true;
+			}
+		} else {
+			if (new RegExp('(^| )' + className + '( |$)', 'gi').test(this.nodes[i].className)) {
+				hasClass = true;
+			}
+		}
+	}
+	return hasClass;
+};
+
+noJquery.fn.addClass = function(classes) {
+	if (!this.hasClass(classes)) {
+		for (var i=0; i<this.nodes.length; i++) {
+			this.nodes[i].className = this.nodes[i].className.trim() + ' ' + classes;
+		}
+	}
+	return this;
+};
+
+noJquery.fn.removeClass = function(className) {
+    this.each(function() {
+        this.className = this.className.replace(new RegExp('\\b' + className + '\\b', 'g'), '');
+    });
+	return this;
+};
+
+noJquery.fn.text = function(str) {
+	if (typeof str == "undefined") {
+		str = "";
+	}
+    return this.each(function() {
+        this.innerText = str;
+    });
+    return this;
+};
+
+noJquery.fn.html = function(str) {
+	if (str == null || typeof str == "undefined") {
+		if (this.nodes != null && this.nodes.length > 0) {
+			return this.nodes[0].innerHTML;
+		}
+		return null;
+	}
+	for (var i=0; i<this.nodes.length; i++) {
+		this.nodes[i].innerHTML = str;
+	}
+    return this;
+};
+
+noJquery.fn.css = function(styleAttr, val) {
+    if (typeof styleAttr != "undefined") {
+		for (var i=0; i<this.nodes.length; i++) {
+
+			if (
+				(styleAttr == "width"
+        		|| styleAttr == "left"
+        		|| styleAttr == "top")
+				&& !isNaN(val)) {
+				val += "px";
+			}
+
+        	if (styleAttr.indexOf("-") != -1) {
+        		var words = styleAttr.split("-");
+        		if (words.length > 1) {
+        			words[1] = words[1].charAt(0).toUpperCase() + words[1].slice(1);
+        		}
+        		this.nodes[i].style[words.join("")] = val;
+        	} else {
+        		this.nodes[i].style[styleAttr] = val;
+        	}
+
+		}
+    }
+    return this;
+};
+
+noJquery.events = [];
+
+noJquery.fn.on = function(name, handler) {
+	name = name.split(" ").join("");
+	var names = name.split(",");
+	for (var i=0; i<names.length; i++) {
+	    this.each(function() {
+	    	var eventObj = {elem: this, name: name};
+	    	eventObj.handler = function (event) {
+	        	event.originalEvent = event;
+
+	        	// Calculate pageX/Y if missing and clientX/Y available
+				if ( event.pageX == null && event.clientX != null ) {
+
+					if (navigator.appVersion.indexOf("MSIE") != -1 && parseFloat(navigator.appVersion.split("MSIE")[1]) == 8) {
+						event.pageX = event.clientX;
+						event.pageY = event.clientY;
+					} else {
+						eventDoc = event.target.ownerDocument || document;
+						doc = eventDoc.documentElement;
+						body = eventDoc.body;
+						event.pageX = event.clientX + ( doc && doc.scrollLeft || body && body.scrollLeft || 0 ) - ( doc && doc.clientLeft || body && body.clientLeft || 0 );
+						event.pageY = event.clientY + ( doc && doc.scrollTop  || body && body.scrollTop  || 0 ) - ( doc && doc.clientTop  || body && body.clientTop  || 0 );
+					}
+				}
+
+	        	//handler (event);
+	        	handler.call(this, event);
+	        };
+	        this.addEventListener(names[i],eventObj.handler , false);
+	        noJquery.events.push (eventObj);
+	    });
+	}
+    return this;
+};
+
+noJquery.fn.unbind = function(name) {
+	name = name.split(" ").join("");
+	var names = name.split(",");
+	for (var i=0; i<names.length; i++) {
+	    this.each(function() {
+	    	for (var j=0; j<noJquery.events.length; j++) {
+	    		if (noJquery.events[j].elem == this && noJquery.events[j].name == name) {
+			        this.removeEventListener(names[i], noJquery.events[j].handler, false);
+	    		}
+	    	}
+	    });
+	}
+    return this;
+};
+
+noJquery.fn.appendTo = function (appentToSelector) {
+	if (this.nodes != null && this.nodes.length > 0) {
+		document.querySelector(appentToSelector).appendChild(this.nodes[0]);
+	}
+	return this;
+};
+
+noJquery.fn.append = function (element) {
+	for (var i=0; i<this.nodes.length; i++) {
+		this.nodes[i].appendChild(element);
+	}
+	return this;
+};
+
+noJquery.fn.find = function (selector) {
+	if (this.nodes != null && this.nodes.length > 0) {
+		return new noJquery(this.nodes[0].querySelector(selector));
+	}
+	return this;
+};
+
+noJquery.fn.attr = function (attrName, attrValue) {
+	if (typeof attrValue == "undefined") {
+		if (this.nodes != null && this.nodes.length > 0) {
+			return this.nodes[0].getAttribute(attrName);
+		}
+		return null;
+	} else {
+		for (var i=0; i<this.nodes.length; i++) {
+			this.nodes[i].setAttribute(attrName, attrValue);
+		}
+		return this;
+	}
+};
+
+noJquery.fn.removeAttr = function (attrName) {
+	for (var i=0; i<this.nodes.length; i++) {
+		this.nodes[i].removeAttribute(attrName);
+	}
+	return this;
+};
+
+noJquery.fn.get = function (index) {
+	if (this.nodes == null || this.nodes.length == 0) {
+		return null;
+	}
+	return this.nodes[index];
+};
+
+noJquery.fn.remove = function () {
+	if (this.nodes != null && this.nodes.length > 0) {
+		this.nodes[0].parentNode.removeChild(this.nodes[0]);
+	}
+	return this;
+};
+
+noJquery.fn.parent = function () {
+	if (this.nodes != null && this.nodes.length > 0) {
+		this.nodes = [this.nodes[0].parentNode];
+	}
+	return this;
+};
+
+noJquery.fn.outerWidth = function () {
+	if (this.nodes != null && this.nodes.length > 0) {
+		return this.nodes[0].offsetWidth;
+	}
+	return null;
+};
+
+noJquery.fn.outerHeight = function () {
+	if (this.nodes != null && this.nodes.length > 0) {
+		return this.nodes[0].outerHeight;
+	}
+	return null;
+};
+
+noJquery.fn.offset = function () {
+	if (this.nodes != null && this.nodes.length > 0) {
+		var rect = this.nodes[0].getBoundingClientRect();
+		var scrollTop = window.pageYOffset || document.body.scrollTop;
+    	var scrollLeft = window.pageXOffset || document.body.scrollLeft;
+		return {
+			top: rect.top + scrollTop,
+			left: rect.left + scrollLeft
+		}
+	}
+	return null;
+};
+
+// Elements animation
+
+noJquery.animations = [];
+noJquery.getAnimationByElementAndType = function (element, animationType) {
+	for (var i=0; i<noJquery.animations.length; i++) {
+		if (noJquery.animations[i].element == element &&
+			noJquery.animations[i].animationType == animationType
+			) {
+			return noJquery.animations[i];
+		}
+	}
+	curAnimation = {element: element, animationType: animationType, animationFrame: null, timeout: null};
+	noJquery.animations.push(curAnimation);
+	return curAnimation;
+}
+
+noJquery.fn.fadeIn = function (onFinished) {
+	this.animate({opacity: 1}, 400, onFinished);
+};
+
+noJquery.fn.fadeOut = function (onFinished) {
+	this.animate({opacity: 0}, 400, onFinished);
+};
+
+noJquery.fn.animate = function (params, duration, onFinished) {
+
+	for (var i=0; i<this.nodes.length; i++) {
+
+		var curElement = this.nodes[i];
+		var opacity = 0;
+		var opacityDir = 0;
+
+		for (var param in params) {
+			if (param == "opacity") {
+				if (typeof window.getComputedStyle != "undefined") {
+					opacity = parseInt(window.getComputedStyle(curElement).getPropertyValue("opacity"));
+					if (opacity < params[param]) {
+						opacityDir = 1;
+					} else {
+						opacityDir = -1;
+					}
+				}
+			}
+			var curAnimation = noJquery.getAnimationByElementAndType(curElement, param);
+			if (curAnimation != null) {
+				if (curAnimation.animationFrame != null) {
+					window.cancelAnimationFrame(curAnimation.animationFrame);
+				}
+				if (curAnimation.timeout != null) {
+					clearTimeout(curAnimation.timeout);
+					curAnimation.timeout = null;
+				}
+			}
+		}
+
+		var finishTime = new Date();
+		finishTime.setMilliseconds(finishTime.getMilliseconds() + duration);
+		var tick = function() {
+
+			for (var param in params) {
+
+				var curAnimation = noJquery.getAnimationByElementAndType(curElement, param);
+				
+				if (param == "opacity") {
+					var curOpacity = opacity + (params[param] - opacity) * (1-((finishTime-new Date()) / duration));
+
+					curElement.style.opacity = curOpacity;
+					curElement.style.filter = 'alpha(opacity=' + (curOpacity * 100)|0 + ')';
+
+					if (
+						(opacityDir > 0 && curOpacity < params[param])
+						||
+						(opacityDir <= 0 && curOpacity > params[param])
+						) {
+						if (window.requestAnimationFrame) {
+							curAnimation.animationFrame = requestAnimationFrame(tick);
+						} else {
+							curAnimation.timeout = setTimeout(tick, 16);
+						}
+					} else {
+						curElement.style.opacity = params[param];
+						curElement.style.filter = 'alpha(opacity=' + (params[param] * 100)|0 + ')';
+						if (typeof onFinished == "function") {
+							onFinished();
+						}
+					}
+				}
+
+			}
+
+		};
+
+		tick();
+
+	}
+
+}
+
+// General Utils
+noJquery.inArray = function (item, array) {
+	for (var i = 0; i < array.length; i++) {
+		if (array[i] === item) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+noJquery.extend = function(out) {
+	out = out || {};
+
+	for (var i = 1; i < arguments.length; i++) {
+		if (!arguments[i]) {
+			continue;
+		}
+
+		for (var key in arguments[i]) {
+			if (arguments[i].hasOwnProperty(key)) {
+				out[key] = arguments[i][key];
+			}
+		}
+	}
+
+	return out;
+};
+
+noJquery.ajax = function (params) {
+
+	if (params.dataType == 'jsonp') {
+		return noJquery.jsonp (params);
+	} else if (params.type == "HEAD") {
+
+		var jsonpRequest = {};
+		var xhr = new XMLHttpRequest();
+		xhr.open(params.type, params.url);
+		xhr.onreadystatechange = function (oEvent) {
+			if (xhr.readyState === 4) {
+				if (xhr.status === 200) {
+					if (typeof params.success == "function") {
+						params.success(this.response);
+					}
+		        } else if (xhr.status === 0) {
+					if (typeof params.error == "function") {
+						params.error(xhr, "abort");
+					}
+				} else {
+					if (typeof params.error == "function") {
+						params.error(xhr, "error");
+					}
+				}  
+			}
+		};
+		xhr.send();
+		jsonpRequest.xhr = jsonpRequest;
+		return jsonpRequest;
+	}
+	return null;
+
+}
+
+noJquery.jsonp = function (params) {
+
+	var jsonpRequest = {};
+    var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+    var script = document.createElement('script');
+    script.src = params.url + (params.url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+    window[callbackName] = function(data) {
+        window[callbackName] = function () {};
+        document.body.removeChild(script);
+        script = null;
+        if (typeof params.success) {
+        	params.success(data);
+        }
+    };
+    if (typeof params.error) {
+    	script.addEventListener('error', params.error);
+    }
+    
+    document.body.appendChild(script);
+    jsonpRequest.abort = function () {
+    	//delete window[callbackName];
+    	window[callbackName] = function () {};
+    	try {
+        	document.body.removeChild(script);
+    	} catch (e) {
+    	}
+        script = null;
+        if (typeof params.error) {
+	    	params.error (null, "abort");
+	    }
+    }
+    return jsonpRequest;
+
+}
+
+window.noJquery = noJquery;
+
+
+// IE8 polyfill for trim
+if(typeof String.prototype.trim !== 'function') {
+  String.prototype.trim = function() {
+    return this.replace(/^\s+|\s+$/g, ''); 
+  }
+}
+
+
 // IE8 polyfill for Object.defineProperty (works partially - only "get" and "set", without triggering functions)
 if (!Object.defineProperty ||
       !(function () { try { Object.defineProperty({}, 'x', {}); return true; } catch (e) { return false; } } ())) {
 	Object.defineProperty = function defineProperty(object, property, descriptor) {
-        descriptor._internalVariables = {
+        /*descriptor._internalVariables = {
         	setVariable: function () {
         	}
-        };
+        };*/
         if ('get' in descriptor) {
         	if (typeof (descriptor.get) == "function") {
         		var returnValue = descriptor.get();
@@ -1832,1033 +2450,33 @@ if (!Object.defineProperty ||
 	};
 }
 
+// IE8 polyfill for addEventListener
 
-/*
- * Javascript EXIF Reader - jQuery plugin 0.1.3
- * Copyright (c) 2008 Jacob Seidelin, cupboy@gmail.com, http://blog.nihilogic.dk/
- * Licensed under the MPL License [http://www.nihilogic.dk/licenses/mpl-license.txt]
- */
+!window.addEventListener && (function (WindowPrototype, DocumentPrototype, ElementPrototype, addEventListener, removeEventListener, dispatchEvent, registry) {
+	WindowPrototype[addEventListener] = DocumentPrototype[addEventListener] = ElementPrototype[addEventListener] = function (type, listener) {
+		var target = this;
 
-(function($) {
+		registry.unshift([target, type, listener, function (event) {
+			event.currentTarget = target;
+			event.preventDefault = function () { event.returnValue = false };
+			event.stopPropagation = function () { event.cancelBubble = true };
+			event.target = event.srcElement || target;
 
+			listener.call(target, event);
+		}]);
 
-var BinaryFile = function(strData, iDataOffset, iDataLength) {
-    var data = strData;
-    var dataOffset = iDataOffset || 0;
-    var dataLength = 0;
-
-    this.getRawData = function() {
-        return data;
-    };
-
-    if (typeof strData == "string") {
-        dataLength = iDataLength || data.length;
-
-        this.getByteAt = function(iOffset) {
-            return data.charCodeAt(iOffset + dataOffset) & 0xFF;
-        };
-    } else if (typeof strData == "unknown") {
-        dataLength = iDataLength || IEBinary_getLength(data);
-
-        this.getByteAt = function(iOffset) {
-            return IEBinary_getByteAt(data, iOffset + dataOffset);
-        };
-    }
-
-    this.getLength = function() {
-        return dataLength;
-    };
-
-    this.getSByteAt = function(iOffset) {
-        var iByte = this.getByteAt(iOffset);
-        if (iByte > 127)
-            return iByte - 256;
-        else
-            return iByte;
-    };
-
-    this.getShortAt = function(iOffset, bBigEndian) {
-        var iShort = bBigEndian ?
-            (this.getByteAt(iOffset) << 8) + this.getByteAt(iOffset + 1)
-            : (this.getByteAt(iOffset + 1) << 8) + this.getByteAt(iOffset);
-        if (iShort < 0) iShort += 65536;
-        return iShort;
-    };
-    this.getSShortAt = function(iOffset, bBigEndian) {
-        var iUShort = this.getShortAt(iOffset, bBigEndian);
-        if (iUShort > 32767)
-            return iUShort - 65536;
-        else
-            return iUShort;
-    };
-    this.getLongAt = function(iOffset, bBigEndian) {
-        var iByte1 = this.getByteAt(iOffset),
-            iByte2 = this.getByteAt(iOffset + 1),
-            iByte3 = this.getByteAt(iOffset + 2),
-            iByte4 = this.getByteAt(iOffset + 3);
-
-        var iLong = bBigEndian ?
-            (((((iByte1 << 8) + iByte2) << 8) + iByte3) << 8) + iByte4
-            : (((((iByte4 << 8) + iByte3) << 8) + iByte2) << 8) + iByte1;
-        if (iLong < 0) iLong += 4294967296;
-        return iLong;
-    };
-    this.getSLongAt = function(iOffset, bBigEndian) {
-        var iULong = this.getLongAt(iOffset, bBigEndian);
-        if (iULong > 2147483647)
-            return iULong - 4294967296;
-        else
-            return iULong;
-    };
-    this.getStringAt = function(iOffset, iLength) {
-        var aStr = [];
-        for (var i=iOffset,j=0;i<iOffset+iLength;i++,j++) {
-            aStr[j] = String.fromCharCode(this.getByteAt(i));
-        }
-        return aStr.join("");
-    };
-
-    this.getCharAt = function(iOffset) {
-        return String.fromCharCode(this.getByteAt(iOffset));
-    };
-    this.toBase64 = function() {
-        return window.btoa(data);
-    };
-    this.fromBase64 = function(strBase64) {
-        data = window.atob(strBase64);
-    };
-};
-
-
-var BinaryAjax = (function() {
-
-    function createRequest() {
-        var oHTTP = null;
-        if (window.XMLHttpRequest) {
-            oHTTP = new XMLHttpRequest();
-        } else if (window.ActiveXObject) {
-            oHTTP = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        return oHTTP;
-    }
-
-    function getHead(strURL, fncCallback, fncError) {
-        var oHTTP = createRequest();
-        if (oHTTP) {
-            if (fncCallback) {
-                if (typeof(oHTTP.onload) != "undefined") {
-                    oHTTP.onload = function() {
-                        if (oHTTP.status == "200") {
-                            fncCallback(this);
-                        } else {
-                            if (fncError) fncError();
-                        }
-                        oHTTP = null;
-                    };
-                } else {
-                    oHTTP.onreadystatechange = function() {
-                        if (oHTTP.readyState == 4) {
-                            if (oHTTP.status == "200") {
-                                fncCallback(this);
-                            } else {
-                                if (fncError) fncError();
-                            }
-                            oHTTP = null;
-                        }
-                    };
-                }
-            }
-            oHTTP.open("HEAD", strURL, true);
-            oHTTP.send(null);
-        } else {
-            if (fncError) fncError();
-        }
-    }
-
-    function sendRequest(strURL, fncCallback, fncError, aRange, bAcceptRanges, iFileSize) {
-        var oHTTP = createRequest();
-        if (oHTTP) {
-
-            var iDataOffset = 0;
-            if (aRange && !bAcceptRanges) {
-                iDataOffset = aRange[0];
-            }
-            var iDataLen = 0;
-            if (aRange) {
-                iDataLen = aRange[1]-aRange[0]+1;
-            }
-
-            if (fncCallback) {
-                if (typeof(oHTTP.onload) != "undefined") {
-                    oHTTP.onload = function() {
-
-                        if (oHTTP.status == "200" || oHTTP.status == "206" || oHTTP.status == "0") {
-                            this.binaryResponse = new BinaryFile(this.responseText, iDataOffset, iDataLen);
-                            this.fileSize = iFileSize || this.getResponseHeader("Content-Length");
-                            fncCallback(this);
-                        } else {
-                            if (fncError) fncError();
-                        }
-                        oHTTP = null;
-                    };
-                } else {
-                    oHTTP.onreadystatechange = function() {
-                        if (oHTTP.readyState == 4) {
-                            if (oHTTP.status == "200" || oHTTP.status == "206" || oHTTP.status == "0") {
-                                this.binaryResponse = new BinaryFile(oHTTP.responseBody, iDataOffset, iDataLen);
-                                this.fileSize = iFileSize || this.getResponseHeader("Content-Length");
-                                fncCallback(this);
-                            } else {
-                                if (fncError) fncError();
-                            }
-                            oHTTP = null;
-                        }
-                    };
-                }
-            }
-            oHTTP.open("GET", strURL, true);
-
-            if (oHTTP.overrideMimeType) oHTTP.overrideMimeType('text/plain; charset=x-user-defined');
-
-            if (aRange && bAcceptRanges) {
-                oHTTP.setRequestHeader("Range", "bytes=" + aRange[0] + "-" + aRange[1]);
-            }
-
-            oHTTP.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 1970 00:00:00 GMT");
-
-            oHTTP.send(null);
-        } else {
-            if (fncError) fncError();
-        }
-    }
-
-    return function(strURL, fncCallback, fncError, aRange) {
-
-        if (aRange) {
-            getHead(
-                strURL,
-                function(oHTTP) {
-                    var iLength = parseInt(oHTTP.getResponseHeader("Content-Length"),10);
-                    var strAcceptRanges = oHTTP.getResponseHeader("Accept-Ranges");
-
-                    var iStart, iEnd;
-                    iStart = aRange[0];
-                    if (aRange[0] < 0)
-                        iStart += iLength;
-                    iEnd = iStart + aRange[1] - 1;
-
-                    sendRequest(strURL, fncCallback, fncError, [iStart, iEnd], (strAcceptRanges == "bytes"), iLength);
-                }
-            );
-
-        } else {
-            sendRequest(strURL, fncCallback, fncError);
-        }
-    };
-
-}());
-
-
-document.write(
-    "<script type='text/vbscript'>\r\n"
-    + "Function IEBinary_getByteAt(strBinary, iOffset)\r\n"
-    + " IEBinary_getByteAt = AscB(MidB(strBinary,iOffset+1,1))\r\n"
-    + "End Function\r\n"
-    + "Function IEBinary_getLength(strBinary)\r\n"
-    + " IEBinary_getLength = LenB(strBinary)\r\n"
-    + "End Function\r\n"
-    + "</script>\r\n"
-);
-
-
-var EXIF = {};
-
-(function() {
-
-var bDebug = false;
-
-EXIF.Tags = {
-
-    // version tags
-    0x9000 : "ExifVersion",         // EXIF version
-    0xA000 : "FlashpixVersion",     // Flashpix format version
-
-    // colorspace tags
-    0xA001 : "ColorSpace",          // Color space information tag
-
-    // image configuration
-    0xA002 : "PixelXDimension",     // Valid width of meaningful image
-    0xA003 : "PixelYDimension",     // Valid height of meaningful image
-    0x9101 : "ComponentsConfiguration", // Information about channels
-    0x9102 : "CompressedBitsPerPixel",  // Compressed bits per pixel
-
-    // user information
-    0x927C : "MakerNote",           // Any desired information written by the manufacturer
-    0x9286 : "UserComment",         // Comments by user
-
-    // related file
-    0xA004 : "RelatedSoundFile",        // Name of related sound file
-
-    // date and time
-    0x9003 : "DateTimeOriginal",        // Date and time when the original image was generated
-    0x9004 : "DateTimeDigitized",       // Date and time when the image was stored digitally
-    0x9290 : "SubsecTime",          // Fractions of seconds for DateTime
-    0x9291 : "SubsecTimeOriginal",      // Fractions of seconds for DateTimeOriginal
-    0x9292 : "SubsecTimeDigitized",     // Fractions of seconds for DateTimeDigitized
-
-    // picture-taking conditions
-    0x829A : "ExposureTime",        // Exposure time (in seconds)
-    0x829D : "FNumber",         // F number
-    0x8822 : "ExposureProgram",     // Exposure program
-    0x8824 : "SpectralSensitivity",     // Spectral sensitivity
-    0x8827 : "ISOSpeedRatings",     // ISO speed rating
-    0x8828 : "OECF",            // Optoelectric conversion factor
-    0x9201 : "ShutterSpeedValue",       // Shutter speed
-    0x9202 : "ApertureValue",       // Lens aperture
-    0x9203 : "BrightnessValue",     // Value of brightness
-    0x9204 : "ExposureBias",        // Exposure bias
-    0x9205 : "MaxApertureValue",        // Smallest F number of lens
-    0x9206 : "SubjectDistance",     // Distance to subject in meters
-    0x9207 : "MeteringMode",        // Metering mode
-    0x9208 : "LightSource",         // Kind of light source
-    0x9209 : "Flash",           // Flash status
-    0x9214 : "SubjectArea",         // Location and area of main subject
-    0x920A : "FocalLength",         // Focal length of the lens in mm
-    0xA20B : "FlashEnergy",         // Strobe energy in BCPS
-    0xA20C : "SpatialFrequencyResponse",    //
-    0xA20E : "FocalPlaneXResolution",   // Number of pixels in width direction per FocalPlaneResolutionUnit
-    0xA20F : "FocalPlaneYResolution",   // Number of pixels in height direction per FocalPlaneResolutionUnit
-    0xA210 : "FocalPlaneResolutionUnit",    // Unit for measuring FocalPlaneXResolution and FocalPlaneYResolution
-    0xA214 : "SubjectLocation",     // Location of subject in image
-    0xA215 : "ExposureIndex",       // Exposure index selected on camera
-    0xA217 : "SensingMethod",       // Image sensor type
-    0xA300 : "FileSource",          // Image source (3 == DSC)
-    0xA301 : "SceneType",           // Scene type (1 == directly photographed)
-    0xA302 : "CFAPattern",          // Color filter array geometric pattern
-    0xA401 : "CustomRendered",      // Special processing
-    0xA402 : "ExposureMode",        // Exposure mode
-    0xA403 : "WhiteBalance",        // 1 = auto white balance, 2 = manual
-    0xA404 : "DigitalZoomRation",       // Digital zoom ratio
-    0xA405 : "FocalLengthIn35mmFilm",   // Equivalent foacl length assuming 35mm film camera (in mm)
-    0xA406 : "SceneCaptureType",        // Type of scene
-    0xA407 : "GainControl",         // Degree of overall image gain adjustment
-    0xA408 : "Contrast",            // Direction of contrast processing applied by camera
-    0xA409 : "Saturation",          // Direction of saturation processing applied by camera
-    0xA40A : "Sharpness",           // Direction of sharpness processing applied by camera
-    0xA40B : "DeviceSettingDescription",    //
-    0xA40C : "SubjectDistanceRange",    // Distance to subject
-
-    // other tags
-    0xA005 : "InteroperabilityIFDPointer",
-    0xA420 : "ImageUniqueID"        // Identifier assigned uniquely to each image
-};
-
-EXIF.TiffTags = {
-    0x0100 : "ImageWidth",
-    0x0101 : "ImageHeight",
-    0x8769 : "ExifIFDPointer",
-    0x8825 : "GPSInfoIFDPointer",
-    0xA005 : "InteroperabilityIFDPointer",
-    0x0102 : "BitsPerSample",
-    0x0103 : "Compression",
-    0x0106 : "PhotometricInterpretation",
-    0x0112 : "Orientation",
-    0x0115 : "SamplesPerPixel",
-    0x011C : "PlanarConfiguration",
-    0x0212 : "YCbCrSubSampling",
-    0x0213 : "YCbCrPositioning",
-    0x011A : "XResolution",
-    0x011B : "YResolution",
-    0x0128 : "ResolutionUnit",
-    0x0111 : "StripOffsets",
-    0x0116 : "RowsPerStrip",
-    0x0117 : "StripByteCounts",
-    0x0201 : "JPEGInterchangeFormat",
-    0x0202 : "JPEGInterchangeFormatLength",
-    0x012D : "TransferFunction",
-    0x013E : "WhitePoint",
-    0x013F : "PrimaryChromaticities",
-    0x0211 : "YCbCrCoefficients",
-    0x0214 : "ReferenceBlackWhite",
-    0x0132 : "DateTime",
-    0x010E : "ImageDescription",
-    0x010F : "Make",
-    0x0110 : "Model",
-    0x0131 : "Software",
-    0x013B : "Artist",
-    0x8298 : "Copyright"
-};
-
-EXIF.GPSTags = {
-    0x0000 : "GPSVersionID",
-    0x0001 : "GPSLatitudeRef",
-    0x0002 : "GPSLatitude",
-    0x0003 : "GPSLongitudeRef",
-    0x0004 : "GPSLongitude",
-    0x0005 : "GPSAltitudeRef",
-    0x0006 : "GPSAltitude",
-    0x0007 : "GPSTimeStamp",
-    0x0008 : "GPSSatellites",
-    0x0009 : "GPSStatus",
-    0x000A : "GPSMeasureMode",
-    0x000B : "GPSDOP",
-    0x000C : "GPSSpeedRef",
-    0x000D : "GPSSpeed",
-    0x000E : "GPSTrackRef",
-    0x000F : "GPSTrack",
-    0x0010 : "GPSImgDirectionRef",
-    0x0011 : "GPSImgDirection",
-    0x0012 : "GPSMapDatum",
-    0x0013 : "GPSDestLatitudeRef",
-    0x0014 : "GPSDestLatitude",
-    0x0015 : "GPSDestLongitudeRef",
-    0x0016 : "GPSDestLongitude",
-    0x0017 : "GPSDestBearingRef",
-    0x0018 : "GPSDestBearing",
-    0x0019 : "GPSDestDistanceRef",
-    0x001A : "GPSDestDistance",
-    0x001B : "GPSProcessingMethod",
-    0x001C : "GPSAreaInformation",
-    0x001D : "GPSDateStamp",
-    0x001E : "GPSDifferential"
-};
-
-EXIF.StringValues = {
-    ExposureProgram : {
-        0 : "Not defined",
-        1 : "Manual",
-        2 : "Normal program",
-        3 : "Aperture priority",
-        4 : "Shutter priority",
-        5 : "Creative program",
-        6 : "Action program",
-        7 : "Portrait mode",
-        8 : "Landscape mode"
-    },
-    MeteringMode : {
-        0 : "Unknown",
-        1 : "Average",
-        2 : "CenterWeightedAverage",
-        3 : "Spot",
-        4 : "MultiSpot",
-        5 : "Pattern",
-        6 : "Partial",
-        255 : "Other"
-    },
-    LightSource : {
-        0 : "Unknown",
-        1 : "Daylight",
-        2 : "Fluorescent",
-        3 : "Tungsten (incandescent light)",
-        4 : "Flash",
-        9 : "Fine weather",
-        10 : "Cloudy weather",
-        11 : "Shade",
-        12 : "Daylight fluorescent (D 5700 - 7100K)",
-        13 : "Day white fluorescent (N 4600 - 5400K)",
-        14 : "Cool white fluorescent (W 3900 - 4500K)",
-        15 : "White fluorescent (WW 3200 - 3700K)",
-        17 : "Standard light A",
-        18 : "Standard light B",
-        19 : "Standard light C",
-        20 : "D55",
-        21 : "D65",
-        22 : "D75",
-        23 : "D50",
-        24 : "ISO studio tungsten",
-        255 : "Other"
-    },
-    Flash : {
-        0x0000 : "Flash did not fire",
-        0x0001 : "Flash fired",
-        0x0005 : "Strobe return light not detected",
-        0x0007 : "Strobe return light detected",
-        0x0009 : "Flash fired, compulsory flash mode",
-        0x000D : "Flash fired, compulsory flash mode, return light not detected",
-        0x000F : "Flash fired, compulsory flash mode, return light detected",
-        0x0010 : "Flash did not fire, compulsory flash mode",
-        0x0018 : "Flash did not fire, auto mode",
-        0x0019 : "Flash fired, auto mode",
-        0x001D : "Flash fired, auto mode, return light not detected",
-        0x001F : "Flash fired, auto mode, return light detected",
-        0x0020 : "No flash function",
-        0x0041 : "Flash fired, red-eye reduction mode",
-        0x0045 : "Flash fired, red-eye reduction mode, return light not detected",
-        0x0047 : "Flash fired, red-eye reduction mode, return light detected",
-        0x0049 : "Flash fired, compulsory flash mode, red-eye reduction mode",
-        0x004D : "Flash fired, compulsory flash mode, red-eye reduction mode, return light not detected",
-        0x004F : "Flash fired, compulsory flash mode, red-eye reduction mode, return light detected",
-        0x0059 : "Flash fired, auto mode, red-eye reduction mode",
-        0x005D : "Flash fired, auto mode, return light not detected, red-eye reduction mode",
-        0x005F : "Flash fired, auto mode, return light detected, red-eye reduction mode"
-    },
-    SensingMethod : {
-        1 : "Not defined",
-        2 : "One-chip color area sensor",
-        3 : "Two-chip color area sensor",
-        4 : "Three-chip color area sensor",
-        5 : "Color sequential area sensor",
-        7 : "Trilinear sensor",
-        8 : "Color sequential linear sensor"
-    },
-    SceneCaptureType : {
-        0 : "Standard",
-        1 : "Landscape",
-        2 : "Portrait",
-        3 : "Night scene"
-    },
-    SceneType : {
-        1 : "Directly photographed"
-    },
-    CustomRendered : {
-        0 : "Normal process",
-        1 : "Custom process"
-    },
-    WhiteBalance : {
-        0 : "Auto white balance",
-        1 : "Manual white balance"
-    },
-    GainControl : {
-        0 : "None",
-        1 : "Low gain up",
-        2 : "High gain up",
-        3 : "Low gain down",
-        4 : "High gain down"
-    },
-    Contrast : {
-        0 : "Normal",
-        1 : "Soft",
-        2 : "Hard"
-    },
-    Saturation : {
-        0 : "Normal",
-        1 : "Low saturation",
-        2 : "High saturation"
-    },
-    Sharpness : {
-        0 : "Normal",
-        1 : "Soft",
-        2 : "Hard"
-    },
-    SubjectDistanceRange : {
-        0 : "Unknown",
-        1 : "Macro",
-        2 : "Close view",
-        3 : "Distant view"
-    },
-    FileSource : {
-        3 : "DSC"
-    },
-
-    Components : {
-        0 : "",
-        1 : "Y",
-        2 : "Cb",
-        3 : "Cr",
-        4 : "R",
-        5 : "G",
-        6 : "B"
-    }
-};
-
-function addEvent(oElement, strEvent, fncHandler)
-{
-    if (oElement.addEventListener) {
-        oElement.addEventListener(strEvent, fncHandler, false);
-    } else if (oElement.attachEvent) {
-        oElement.attachEvent("on" + strEvent, fncHandler);
-    }
-}
-
-
-function imageHasData(oImg)
-{
-    return !!(oImg.exifdata);
-}
-
-function getImageData(oImg, fncCallback)
-{
-    BinaryAjax(
-        oImg.src,
-        function(oHTTP) {
-            var oEXIF = findEXIFinJPEG(oHTTP.binaryResponse);
-            oImg.exifdata = oEXIF || {};
-            if (fncCallback) fncCallback();
-        }
-    );
-}
-
-function findEXIFinJPEG(oFile) {
-    var aMarkers = [];
-
-    if (oFile.getByteAt(0) != 0xFF || oFile.getByteAt(1) != 0xD8) {
-        return false; // not a valid jpeg
-    }
-
-    var iOffset = 2;
-    var iLength = oFile.getLength();
-    while (iOffset < iLength) {
-        if (oFile.getByteAt(iOffset) != 0xFF) {
-            if (bDebug) console.log("Not a valid marker at offset " + iOffset + ", found: " + oFile.getByteAt(iOffset));
-            return false; // not a valid marker, something is wrong
-        }
-
-        var iMarker = oFile.getByteAt(iOffset+1);
-
-        // we could implement handling for other markers here,
-        // but we're only looking for 0xFFE1 for EXIF data
-
-        if (iMarker == 22400) {
-            if (bDebug) console.log("Found 0xFFE1 marker");
-            return readEXIFData(oFile, iOffset + 4, oFile.getShortAt(iOffset+2, true)-2);
-            // iOffset += 2 + oFile.getShortAt(iOffset+2, true);
-            // WTF?
-
-        } else if (iMarker == 225) {
-            // 0xE1 = Application-specific 1 (for EXIF)
-            if (bDebug) console.log("Found 0xFFE1 marker");
-            return readEXIFData(oFile, iOffset + 4, oFile.getShortAt(iOffset+2, true)-2);
-
-        } else {
-            iOffset += 2 + oFile.getShortAt(iOffset+2, true);
-        }
-
-    }
-
-}
-
-
-function readTags(oFile, iTIFFStart, iDirStart, oStrings, bBigEnd)
-{
-    var iEntries = oFile.getShortAt(iDirStart, bBigEnd);
-    var oTags = {};
-    for (var i=0;i<iEntries;i++) {
-        var iEntryOffset = iDirStart + i*12 + 2;
-        var strTag = oStrings[oFile.getShortAt(iEntryOffset, bBigEnd)];
-        if (!strTag && bDebug) console.log("Unknown tag: " + oFile.getShortAt(iEntryOffset, bBigEnd));
-        oTags[strTag] = readTagValue(oFile, iEntryOffset, iTIFFStart, iDirStart, bBigEnd);
-    }
-    return oTags;
-}
-
-
-function readTagValue(oFile, iEntryOffset, iTIFFStart, iDirStart, bBigEnd)
-{
-    var iType = oFile.getShortAt(iEntryOffset+2, bBigEnd);
-    var iNumValues = oFile.getLongAt(iEntryOffset+4, bBigEnd);
-    var iValueOffset = oFile.getLongAt(iEntryOffset+8, bBigEnd) + iTIFFStart;
-
-    switch (iType) {
-        case 1: // byte, 8-bit unsigned int
-        case 7: // undefined, 8-bit byte, value depending on field
-            if (iNumValues == 1) {
-                return oFile.getByteAt(iEntryOffset + 8, bBigEnd);
-            } else {
-                var iValOffset = iNumValues > 4 ? iValueOffset : (iEntryOffset + 8);
-                var aVals = [];
-                for (var n=0;n<iNumValues;n++) {
-                    aVals[n] = oFile.getByteAt(iValOffset + n);
-                }
-                return aVals;
-            }
-            break;
-
-        case 2: // ascii, 8-bit byte
-            var iStringOffset = iNumValues > 4 ? iValueOffset : (iEntryOffset + 8);
-            return oFile.getStringAt(iStringOffset, iNumValues-1);
-            // break;
-
-        case 3: // short, 16 bit int
-            if (iNumValues == 1) {
-                return oFile.getShortAt(iEntryOffset + 8, bBigEnd);
-            } else {
-                var iValOffset = iNumValues > 2 ? iValueOffset : (iEntryOffset + 8);
-                var aVals = [];
-                for (var n=0;n<iNumValues;n++) {
-                    aVals[n] = oFile.getShortAt(iValOffset + 2*n, bBigEnd);
-                }
-                return aVals;
-            }
-            // break;
-
-        case 4: // long, 32 bit int
-            if (iNumValues == 1) {
-                return oFile.getLongAt(iEntryOffset + 8, bBigEnd);
-            } else {
-                var aVals = [];
-                for (var n=0;n<iNumValues;n++) {
-                    aVals[n] = oFile.getLongAt(iValueOffset + 4*n, bBigEnd);
-                }
-                return aVals;
-            }
-            break;
-        case 5: // rational = two long values, first is numerator, second is denominator
-            if (iNumValues == 1) {
-                return oFile.getLongAt(iValueOffset, bBigEnd) / oFile.getLongAt(iValueOffset+4, bBigEnd);
-            } else {
-                var aVals = [];
-                for (var n=0;n<iNumValues;n++) {
-                    aVals[n] = oFile.getLongAt(iValueOffset + 8*n, bBigEnd) / oFile.getLongAt(iValueOffset+4 + 8*n, bBigEnd);
-                }
-                return aVals;
-            }
-            break;
-        case 9: // slong, 32 bit signed int
-            if (iNumValues == 1) {
-                return oFile.getSLongAt(iEntryOffset + 8, bBigEnd);
-            } else {
-                var aVals = [];
-                for (var n=0;n<iNumValues;n++) {
-                    aVals[n] = oFile.getSLongAt(iValueOffset + 4*n, bBigEnd);
-                }
-                return aVals;
-            }
-            break;
-        case 10: // signed rational, two slongs, first is numerator, second is denominator
-            if (iNumValues == 1) {
-                return oFile.getSLongAt(iValueOffset, bBigEnd) / oFile.getSLongAt(iValueOffset+4, bBigEnd);
-            } else {
-                var aVals = [];
-                for (var n=0;n<iNumValues;n++) {
-                    aVals[n] = oFile.getSLongAt(iValueOffset + 8*n, bBigEnd) / oFile.getSLongAt(iValueOffset+4 + 8*n, bBigEnd);
-                }
-                return aVals;
-            }
-            break;
-    }
-}
-
-
-function readEXIFData(oFile, iStart, iLength)
-{
-    if (oFile.getStringAt(iStart, 4) != "Exif") {
-        if (bDebug) console.log("Not valid EXIF data! " + oFile.getStringAt(iStart, 4));
-        return false;
-    }
-
-    var bBigEnd;
-
-    var iTIFFOffset = iStart + 6;
-
-    // test for TIFF validity and endianness
-    if (oFile.getShortAt(iTIFFOffset) == 0x4949) {
-        bBigEnd = false;
-    } else if (oFile.getShortAt(iTIFFOffset) == 0x4D4D) {
-        bBigEnd = true;
-    } else {
-        if (bDebug) console.log("Not valid TIFF data! (no 0x4949 or 0x4D4D)");
-        return false;
-    }
-
-    if (oFile.getShortAt(iTIFFOffset+2, bBigEnd) != 0x002A) {
-        if (bDebug) console.log("Not valid TIFF data! (no 0x002A)");
-        return false;
-    }
-
-    if (oFile.getLongAt(iTIFFOffset+4, bBigEnd) != 0x00000008) {
-        if (bDebug) console.log("Not valid TIFF data! (First offset not 8)", oFile.getShortAt(iTIFFOffset+4, bBigEnd));
-        return false;
-    }
-
-    var oTags = readTags(oFile, iTIFFOffset, iTIFFOffset+8, EXIF.TiffTags, bBigEnd);
-
-    if (oTags.ExifIFDPointer) {
-        var oEXIFTags = readTags(oFile, iTIFFOffset, iTIFFOffset + oTags.ExifIFDPointer, EXIF.Tags, bBigEnd);
-        for (var strTag in oEXIFTags) {
-            switch (strTag) {
-                case "LightSource" :
-                case "Flash" :
-                case "MeteringMode" :
-                case "ExposureProgram" :
-                case "SensingMethod" :
-                case "SceneCaptureType" :
-                case "SceneType" :
-                case "CustomRendered" :
-                case "WhiteBalance" :
-                case "GainControl" :
-                case "Contrast" :
-                case "Saturation" :
-                case "Sharpness" :
-                case "SubjectDistanceRange" :
-                case "FileSource" :
-                    oEXIFTags[strTag] = EXIF.StringValues[strTag][oEXIFTags[strTag]];
-                    break;
-
-                case "ExifVersion" :
-                case "FlashpixVersion" :
-                    oEXIFTags[strTag] = String.fromCharCode(oEXIFTags[strTag][0], oEXIFTags[strTag][1], oEXIFTags[strTag][2], oEXIFTags[strTag][3]);
-                    break;
-
-                case "ComponentsConfiguration" :
-                    oEXIFTags[strTag] =
-                        EXIF.StringValues.Components[oEXIFTags[strTag][0]]
-                        + EXIF.StringValues.Components[oEXIFTags[strTag][1]]
-                        + EXIF.StringValues.Components[oEXIFTags[strTag][2]]
-                        + EXIF.StringValues.Components[oEXIFTags[strTag][3]];
-                    break;
-            }
-            oTags[strTag] = oEXIFTags[strTag];
-        }
-    }
-
-    if (oTags.GPSInfoIFDPointer) {
-        var oGPSTags = readTags(oFile, iTIFFOffset, iTIFFOffset + oTags.GPSInfoIFDPointer, EXIF.GPSTags, bBigEnd);
-        for (var strTag in oGPSTags) {
-            switch (strTag) {
-                case "GPSVersionID" :
-                    oGPSTags[strTag] = oGPSTags[strTag][0]
-                        + "." + oGPSTags[strTag][1]
-                        + "." + oGPSTags[strTag][2]
-                        + "." + oGPSTags[strTag][3];
-                    break;
-            }
-            oTags[strTag] = oGPSTags[strTag];
-        }
-    }
-
-    return oTags;
-}
-
-
-EXIF.getData = function(oImg, fncCallback)
-{
-    if (!oImg.complete) return false;
-    if (!imageHasData(oImg)) {
-        getImageData(oImg, fncCallback);
-    } else {
-        if (fncCallback) fncCallback();
-    }
-    return true;
-};
-
-EXIF.getTag = function(oImg, strTag)
-{
-    if (!imageHasData(oImg)) return;
-    return oImg.exifdata[strTag];
-};
-
-EXIF.getAllTags = function(oImg)
-{
-    if (!imageHasData(oImg)) return {};
-    var oData = oImg.exifdata;
-    var oAllTags = {};
-    for (var a in oData) {
-        if (oData.hasOwnProperty(a)) {
-            oAllTags[a] = oData[a];
-        }
-    }
-    return oAllTags;
-};
-
-EXIF.pretty = function(oImg)
-{
-    if (!imageHasData(oImg)) return "";
-    var oData = oImg.exifdata;
-    var strPretty = "";
-    for (var a in oData) {
-        if (oData.hasOwnProperty(a)) {
-            if (typeof oData[a] == "object") {
-                strPretty += a + " : [" + oData[a].length + " values]\r\n";
-            } else {
-                strPretty += a + " : " + oData[a] + "\r\n";
-            }
-        }
-    }
-    return strPretty;
-};
-
-EXIF.readFromBinaryFile = function(oFile) {
-    return findEXIFinJPEG(oFile);
-};
-
-// function loadAllImages()
-// {
-//     var aImages = document.getElementsByTagName("img");
-//     var callb = function() {
-//         EXIF.getData(this);
-//     };
-//     for (var i=0;i<aImages.length;i++) {
-//         if (aImages[i].getAttribute("exif") == "true") {
-//             if (!aImages[i].complete) {
-//                 addEvent(aImages[i], "load", callb);
-//             } else {
-//                 EXIF.getData(aImages[i]);
-//             }
-//         }
-//     }
-// }
-
-// automatically load exif data for all images with exif=true when doc is ready
-// $(document).ready(loadAllImages);
-
-// load data for images manually
-$.fn.exifLoad = function(fncCallback) {
-    return this.each(function() {
-        EXIF.getData(this, fncCallback);
-    });
-};
-
-$.fn.exif = function(strTag) {
-    var aStrings = [];
-    this.each(function() {
-        aStrings.push(EXIF.getTag(this, strTag));
-    });
-    return aStrings;
-};
-
-$.fn.exifAll = function() {
-    var aStrings = [];
-    this.each(function() {
-        aStrings.push(EXIF.getAllTags(this));
-    });
-    return aStrings;
-};
-
-$.fn.exifPretty = function() {
-    var aStrings = [];
-    this.each(function() {
-        aStrings.push(EXIF.pretty(this));
-    });
-    return aStrings;
-};
-
-var getFilePart = function(file) {
-    if (file.slice) {
-        filePart = file.slice(0, 131072);
-    } else if (file.webkitSlice) {
-        filePart = file.webkitSlice(0, 131072);
-    } else if (file.mozSlice) {
-        filePart = file.mozSlice(0, 131072);
-    } else {
-        filePart = file;
-    }
-
-    return filePart;
-};
-
-$.fn.fileExif = function(callback) {
-    var reader = new FileReader();
-
-    reader.onload = function(event) {
-        var content = event.target.result;
-
-        var binaryResponse = new BinaryFile(content);
-
-        callback(EXIF.readFromBinaryFile(binaryResponse));
-    };
-
-    reader.readAsBinaryString(getFilePart(this[0].files[0]));
-};
-
-$.fileExif = function(file, callback) {
-    var reader = new FileReader();
-
-    reader.onload = function(event) {
-        var content = event.target.result;
-
-        var binaryResponse = new BinaryFile(content);
-
-        callback(EXIF.readFromBinaryFile(binaryResponse));
-    };
-
-    reader.readAsBinaryString(getFilePart(file));
-};
-
-$.exifReadFromBinaryFile = function(binary) {
-    return EXIF.readFromBinaryFile(binary);
-};
-
-})();
-
-})(jQuery);
-
-
-var keyStr = "ABCDEFGHIJKLMNOP" +
-               "QRSTUVWXYZabcdef" +
-               "ghijklmnopqrstuv" +
-               "wxyz0123456789+/" +
-               "=";
-			   
-function decode64(input) {
-	var output = "";
-	var chr1, chr2, chr3 = "";
-	var enc1, enc2, enc3, enc4 = "";
-	var i = 0;
-	
-	// remove all characters that are not A-Z, a-z, 0-9, +, /, or =
-	var base64test = /[^A-Za-z0-9\+\/\=]/g;
-	if (base64test.exec(input)) {
-		console.log("There were invalid base64 characters in the input text.\n" +
-		  "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
-		  "Expect errors in decoding.");
-	}
-	input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-	
-	do {
-		enc1 = keyStr.indexOf(input.charAt(i++));
-		enc2 = keyStr.indexOf(input.charAt(i++));
-		enc3 = keyStr.indexOf(input.charAt(i++));
-		enc4 = keyStr.indexOf(input.charAt(i++));
-		
-		chr1 = (enc1 << 2) | (enc2 >> 4);
-		chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-		chr3 = ((enc3 & 3) << 6) | enc4;
-		
-		output = output + String.fromCharCode(chr1);
-		
-		if (enc3 != 64) {
-		   output = output + String.fromCharCode(chr2);
-		}
-		if (enc4 != 64) {
-		   output = output + String.fromCharCode(chr3);
-		}
-		
-		chr1 = chr2 = chr3 = "";
-		enc1 = enc2 = enc3 = enc4 = "";
-		
-		} while (i < input.length);
-		
-	return unescape(output);
-}
-
-function getExifData(image_result) {
-	var data = image_result.replace("data:image/jpeg;base64,", "");
-	var decoded_data = decode64(data);
-	
-	getLongAt = function(iOffset, bBigEndian) {
-				var iByte1 = decoded_data.charCodeAt(iOffset),
-					iByte2 = decoded_data.charCodeAt(iOffset + 1),
-					iByte3 = decoded_data.charCodeAt(iOffset + 2),
-					iByte4 = decoded_data.charCodeAt(iOffset + 3);
-
-				var iLong = bBigEndian ? 
-					(((((iByte1 << 8) + iByte2) << 8) + iByte3) << 8) + iByte4
-					: (((((iByte4 << 8) + iByte3) << 8) + iByte2) << 8) + iByte1;
-				if (iLong < 0) iLong += 4294967296;
-				return iLong;
-			};
-	
-	getSLongAt = function(iOffset, bBigEndian) {
-		var iULong = getLongAt(iOffset, bBigEndian);
-		if (iULong > 2147483647)
-			return iULong - 4294967296;
-		else
-			return iULong;
+		this.attachEvent("on" + type, registry[0][3]);
 	};
-	
-	var result = $.exifReadFromBinaryFile({ 
-		getByteAt: function(idx) { return decoded_data.charCodeAt(idx); },
-		getLength: function() { return decoded_data.length; },
-		getShortAt: function(iOffset, bBigEndian) {
-				var iShort = bBigEndian ? 
-					(decoded_data.charCodeAt(iOffset) << 8) + decoded_data.charCodeAt(iOffset + 1)
-					: (decoded_data.charCodeAt(iOffset + 1) << 8) + decoded_data.charCodeAt(iOffset)
-				if (iShort < 0) iShort += 65536;
-				return iShort;
-			},
-		getStringAt: function(a, b) { return decoded_data.substring(a, a+b); },
-		getLongAt: getLongAt,
-		getSLongAt: getSLongAt
-	});
-	return result;
-}
+
+	WindowPrototype[removeEventListener] = DocumentPrototype[removeEventListener] = ElementPrototype[removeEventListener] = function (type, listener) {
+		for (var index = 0, register; register = registry[index]; ++index) {
+			if (register[0] == this && register[1] == type && register[2] == listener) {
+				return this.detachEvent("on" + type, registry.splice(index, 1)[0][3]);
+			}
+		}
+	};
+
+	WindowPrototype[dispatchEvent] = DocumentPrototype[dispatchEvent] = ElementPrototype[dispatchEvent] = function (eventObject) {
+		return this.fireEvent("on" + eventObject.type, eventObject);
+	};
+})(Window.prototype, HTMLDocument.prototype, Element.prototype, "addEventListener", "removeEventListener", "dispatchEvent", []);
