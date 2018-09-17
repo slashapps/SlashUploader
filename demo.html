@@ -2,8 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>SlashUploader</title>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<title>SlashUploader Demos</title>
 <script src="./SlashUploader/SlashUploader.min.js"></script>
 <link rel="stylesheet" href="./SlashUploader/SlashUploader.min.css" type="text/css" />
 
@@ -19,6 +18,7 @@ var uploaderRtl;
 var uploaderNoDragDrop;
 var uploaderNoResults;
 var uploaderCrossDomain;
+var uploaderCrossDomainNoChuncks;
 var uploaderWithValidations;
 var uploaderNoOverwrite;
 var uploaderCustomCss;
@@ -45,7 +45,8 @@ function buildUploaders () {
 		for (var i=0; i<files.length; i++) {
 			str += files[i].name+"; "+files[i].width+"x"+files[i].height+"<br>";
 		}
-		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+		var responseElement = this.elements.containerElement.parentNode.parentNode.querySelector(".uploader_status");
+		responseElement.innerHTML = str;
 	};
 
 	var onFilesUploaded = function (files) {
@@ -54,14 +55,8 @@ function buildUploaders () {
 		for (var i=0; i<files.length; i++) {
 			str += files[i].file_name+"<br>";
 		}
-		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
-	};
-
-	var onFilesUploaded = function (files) {
-		for (var i=0; i<files.length; i++) {
-		    var file = files[i];
-		    console.log ("Name: "+file[this.serverScripts.fileNameVariableName]+"; URL: "+file[this.serverScripts.fileUrlVariableName]);
-		}
+		var responseElement = this.elements.containerElement.parentNode.parentNode.querySelector(".uploader_status");
+		responseElement.innerHTML = str;
 	};
 
 	var onFileDeleted = function (deletedFile, files) {
@@ -72,18 +67,21 @@ function buildUploaders () {
 		for (var i=0; i<files.length; i++) {
 			str += files[i].file_name+"<br>";
 		}
-		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+		var responseElement = this.elements.containerElement.parentNode.parentNode.querySelector(".uploader_status");
+		responseElement.innerHTML = str;
 	}
 
 	var onFilesProgress = function (curUploadingFileProgress, curUploadingFileIndex, totalFilesToUpload) {
-		var text = Math.floor(curUploadingFileProgress*100)+"% ("+(curUploadingFileIndex+1)+"/"+totalFilesToUpload+")";
-		console.log ("onFilesProgress", text);
-		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (text);
+		var str = Math.floor(curUploadingFileProgress*100)+"% ("+(curUploadingFileIndex+1)+"/"+totalFilesToUpload+")";
+		console.log ("onFilesProgress", str);
+		var responseElement = this.elements.containerElement.parentNode.parentNode.querySelector(".uploader_status");
+		responseElement.innerHTML = str;
 	};
 
 	var onCanceled = function () {
 		var str = "Canceled";
-		$(this.elements.containerElement).parent().parent().find(".uploader_status").html(str).css("display", "none").fadeIn();
+		var responseElement = this.elements.containerElement.parentNode.parentNode.querySelector(".uploader_status");
+		responseElement.innerHTML = str;
 	};
 
 	var onError = function (errors) {
@@ -94,15 +92,14 @@ function buildUploaders () {
 				str += errors[i].file.name+"<br>";
 			}
 		}
-		$(this.elements.containerElement).parent().parent().find(".uploader_status").html (str).css("display", "none").fadeIn();
+		var responseElement = this.elements.containerElement.parentNode.parentNode.querySelector(".uploader_status");
+		responseElement.innerHTML = str;
 	};
 	
-	uploaderDefault = new SlashUploader ($("#uploader_default"));
 	
-	uploaderSingleFile = new SlashUploader ($("#uploader_single_file"), {
-		dropFilesText: "Drop file here",
-		browseText: "Drop file here or click to upload",
-		maxFiles: 1,
+	uploaderDefault = new SlashUploader (document.getElementById("uploader_default"));
+
+	uploaderSingleFile = new SlashUploader (document.getElementById("uploader_single_file"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -110,9 +107,12 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderSingleFile.dropFilesText = "Drop file here";
+	uploaderSingleFile.browseText = "Drop file here or click to upload";
+	uploaderSingleFile.maxFiles = 1;
 	
-	uploaderNoMetadata = new SlashUploader ($("#uploader_no_metadata"), {
-		doGetFileMetadata: false,
+
+	uploaderNoMetadata = new SlashUploader (document.getElementById("uploader_no_metadata"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -120,9 +120,10 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderNoMetadata.doGetFileMetadata = false;
 
-	uploaderNoChunks = new SlashUploader ($("#uploader_no_chunks"), {
-		uploadFileInChunks: false,
+
+	uploaderNoChunks = new SlashUploader (document.getElementById("uploader_no_chunks"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -130,23 +131,21 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderNoChunks.uploadFileInChunks = false;
 
-	uploaderDisabled = new SlashUploader ($("#uploader_disabled"), {
-		uploadedFiles: [
-						{file_name: "2015-08-13(2).jpg", file_path: "//localhost/Libs/server_scripts/uploads/2015-08-13(2).jpg"},
-						{file_name: "alon.jpg", file_path: "//localhost/Libs/server_scripts/uploads/alon.jpg"}
-						],
-	    onFilesUploaded: function (files) {
-	        this.disabled = true;
-	    },
-		disabled: true
-	});
 
-	uploaderPreDefinedFiles = new SlashUploader ($("#uploader_pre_defined_files"), {
-		uploadedFiles: [
-						{file_name: "2015-08-13(2).jpg", file_path: "//localhost/Libs/server_scripts/uploads/2015-08-13(2).jpg"},
-						{file_name: "alon.jpg", file_path: "//localhost/Libs/server_scripts/uploads/alon.jpg"}
-						],
+	uploaderDisabled = new SlashUploader (document.getElementById("uploader_disabled"));
+	uploaderDisabled.uploadedFiles = [
+						{file_name: "2015-08-13(2).jpg", file_path: "//mydomain.com/uploads/2015-08-13(2).jpg"},
+						{file_name: "test.png", file_path: "//mydomain.com/uploads/test.png"}
+					];
+	uploaderDisabled.disabled = true;
+	uploaderDisabled.onFilesUploaded = function (files) {
+		this.disabled = true;
+	};
+
+
+	uploaderPreDefinedFiles = new SlashUploader (document.getElementById("uploader_pre_defined_files"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -154,9 +153,13 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderPreDefinedFiles.uploadedFiles = [
+						{file_name: "2015-08-13(2).jpg", file_path: "//mydomain.com/uploads/2015-08-13(2).jpg"},
+						{file_name: "test.png", file_path: "//mydomain.com/uploads/test.png"}
+					];
 
-	uploaderProgressBar = new SlashUploader ($("#uploader_progress_bar"), {
-		progressAnimationType: "inline|bar",
+
+	uploaderProgressBar = new SlashUploader (document.getElementById("uploader_progress_bar"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -164,24 +167,10 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderProgressBar.progressAnimationType = "inline|bar";
 
 
-	uploaderRtl = new SlashUploader ($("#uploader_rtl"), {
-		progressAnimationType: "inline|bar",
-		rtl: true,
-		browseText: "הנח קבצים כאן או לחץ לבחירת קבצים",
-		browseTextDropDisabled: "לחץ לבחירת קובץ",
-		dropFilesText: "הנח קבצים כאן",
-		uploadingFileText: "מעלה את הקובץ \"{{current_file_name}}\"...",
-		uploadingFileTextProgressBar: "מעלה את הקובץ \"{{current_file_name}}\"...",
-		uploadingFilesText: "מעלה {{total_files}} קבצים...",
-		uploadingFilesTextProgressBar: "מעלה {{total_files}} קבצים...",
-		uploadingFileByFileText: "מעלה את הקובץ \"{{current_file_name}}\" (קובץ {{current_file_index}} מתוך {{total_files}})",
-		cancelText: "ביטול"
-	});
-
-	uploaderNoDragDrop = new SlashUploader ($("#uploader_no_drag_drop"), {
-		enableDropFiles: false,
+	uploaderRtl = new SlashUploader (document.getElementById("uploader_rtl"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -189,9 +178,20 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderRtl.progressAnimationType = "inline|bar";
+	uploaderRtl.rtl = true;
+	uploaderRtl.browseText = "הנח קבצים כאן או לחץ לבחירת קבצים";
+	uploaderRtl.browseTextDropDisabled = "לחץ לבחירת קובץ";
+	uploaderRtl.dropFilesText = "הנח קבצים כאן";
+	uploaderRtl.uploadingFileText = "מעלה את הקובץ \"{{current_file_name}}\"...";
+	uploaderRtl.uploadingFileTextProgressBar = "מעלה את הקובץ \"{{current_file_name}}\"...";
+	uploaderRtl.uploadingFilesText = "מעלה {{total_files}} קבצים...";
+	uploaderRtl.uploadingFilesTextProgressBar = "מעלה {{total_files}} קבצים...";
+	uploaderRtl.uploadingFileByFileText = "מעלה את הקובץ \"{{current_file_name}}\" (קובץ {{current_file_index}} מתוך {{total_files}})";
+	uploaderRtl.cancelText = "ביטול";
 
-	uploaderNoResults = new SlashUploader ($("#uploader_no_results"), {
-		showUploadedFiles: false,
+
+	uploaderNoDragDrop = new SlashUploader (document.getElementById("uploader_no_drag_drop"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -199,15 +199,10 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderNoDragDrop.enableDropFiles = false;
 
-	uploaderCrossDomain = new SlashUploader ($("#uploader_field_cross_domain"), {
-		serverScripts: {
-			uploadChunk: "//otherdomain.com/test/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
-			combineChunks: "//otherdomain.com/test/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}",
-			uploadStream: "//otherdomain.com/test/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}",
-			uploadThroughIframe: "//otherdomain.com/test/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}"
-		},
-		uploadFileInChunks: false,
+
+	uploaderNoResults = new SlashUploader (document.getElementById("uploader_no_results"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -215,24 +210,17 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
-
-	uploaderWithValidations = new SlashUploader ($("#uploader_field_validations"), {
-		allowedFilesExtensions: ["mp4", "mov", "avi", "ogv", "wmv", "flv", "mkv", "mpg", "webm"],
-		allowedMaxFileSize: 10000,
-		customValidation: function (file) {
-			if (file.duration == null) {
-				console.log ("Couldn't read metadata for '"+file.name+"', so duration validation isn't possible");
-			} else if (file.duration < 10) {
-				return {error: 'invalid_duration', error_text: "\"{{file_name}}\" duration is less then 10 seconds."};
-			}
-		},
-		errors: {
-			invalidFileExtension: "File \"{{file_name}}\" is not a supportted video format.",
-			invalidFileSize: "File \"{{file_name}}\" exceeds 10MB."
-		},
-		acceptOnlyFilesTypes: "video/*",
-		maxFileChars: 18,
-		resetFilesOnEachUpload: false,
+	uploaderNoResults.showUploadedFiles = false;
+	
+	
+	var crossDomainScripts = {
+		uploadChunk: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
+		combineChunks: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}",
+		uploadStream: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}",
+		uploadThroughIframe: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}"
+	};
+		
+	uploaderCrossDomain = new SlashUploader (document.getElementById("uploader_field_cross_domain"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -240,9 +228,9 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
-
-	uploaderNoOverwrite = new SlashUploader ($("#uploader_no_overwrite"), {
-		resetFilesOnEachUpload: false,
+	uploaderCrossDomain.serverScripts = crossDomainScripts;
+	
+	uploaderCrossDomainNoChuncks = new SlashUploader (document.getElementById("uploader_field_cross_domain_no_chunks"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -250,9 +238,11 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderCrossDomainNoChuncks.serverScripts = crossDomainScripts;
+	uploaderCrossDomainNoChuncks.uploadFileInChunks = false;
 
-	uploaderCustomCss = new SlashUploader ($("#uploader_custom_css"), {
-		progressAnimationType: "inline|bar",
+
+	uploaderWithValidations = new SlashUploader (document.getElementById("uploader_field_validations"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
 		onFilesProgress: onFilesProgress,
@@ -260,8 +250,47 @@ function buildUploaders () {
 		onCanceled: onCanceled,
 		onError: onError
 	});
+	uploaderWithValidations.allowedFilesExtensions = ["mp4", "mov", "avi", "ogv", "wmv", "flv", "mkv", "mpg", "webm"];
+	uploaderWithValidations.allowedMaxFileSize = 5000;
+	uploaderWithValidations.customValidation = function (file) {
+		if (file.duration == null) {
+			console.log ("Couldn't read metadata for '"+file.name+"', so duration validation isn't possible");
+		} else if (file.duration < 10) {
+			return {error: 'invalid_duration', error_text: "\"{{file_name}}\" duration is less then 10 seconds."};
+		}
+	};
+	uploaderWithValidations.errors = {
+		invalidFileExtension: "File \"{{file_name}}\" is not a supportted video format.",
+		invalidFileSize: "File \"{{file_name}}\" exceeds 5MB."
+	};
+	uploaderWithValidations.acceptOnlyFilesTypes = "video/*";
+	uploaderWithValidations.maxFileChars = 18;
+	uploaderWithValidations.resetFilesOnEachUpload = false;
 
-	uploaderCustomHTML = new SlashUploader ($("#uploader_field_custom_button"), {
+
+	uploaderNoOverwrite = new SlashUploader (document.getElementById("uploader_no_overwrite"), {
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+	uploaderNoOverwrite.resetFilesOnEachUpload = false;
+
+
+	uploaderCustomCss = new SlashUploader (document.getElementById("uploader_custom_css"), {
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+	uploaderCustomCss.progressAnimationType = "inline|bar";
+
+
+	uploaderCustomHTML = new SlashUploader (document.getElementById("uploader_field_custom_button"), {
 		customHTML: true,
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
@@ -271,6 +300,7 @@ function buildUploaders () {
 		onError: onError
 	});
 	
+
 }
 </script>
 
@@ -290,32 +320,49 @@ html, body {
 .uploader_status {
 	vertical-align: top;
 }
-.custom {
-	padding: 40px;
+.custom_html {
+	width: 120px;
+    height: auto;
+	border: 2px solid red;
+    transition: all 0.5s;
+	-webkit-transition: all 0.5s;
 }
-.custom:hover {
-	background-color: grey;
-	-webkit-transition: all 1s; /* Safari */
-    transition: all 1s;
+.custom_html.hover {
+    background-color: tomato;
 }
+.custom_html.dragged_enter {
+	border: 2px dashed red;
+	background-color: white;
+}
+.custom_html.dragged_over {
+	border: 2px dashed tomato;
+	background-color: #ffcaca;
+}
+.custom_html.uploading {
+	opacity: 0.5;
+}
+
 
 .custom_css .uploader_drop_area {
 	border: 2px solid green;
 	color: green;
 }
-.custom_css .uploader_drop_area.hover {
+.custom_css.hover .uploader_drop_area {
 	background: #93c293;
 	color: white;
 }
-.custom_css .uploader_drop_area.dragged_enter {
+.custom_css.dragged_enter .uploader_drop_area {
 	background: #296d29;
 	color: white;
 	border: 2px dashed white;
 }
-.custom_css .uploader_drop_area.dragged_over {
+.custom_css.dragged_over .uploader_drop_area {
 	background: #0c510c;
 	color: white;
 	border: 2px dashed white;
+}
+.custom_css.uploading .uploader_text span {
+	font-weight: bold;
 }
 .custom_css .uploader_drop_area_bottom {
 	background: #97e497;
@@ -332,6 +379,8 @@ html, body {
 .custom_css .uploader_progress_container .uploader_progress_bar>div>div {
 	background: green;
 }
+
+
 </style>
 
 </head>
@@ -471,6 +520,18 @@ html, body {
 		</tr>
 		<tr>
 			<td>
+				Cross-Domain Script, No Chunks
+			</td>
+			<td>
+				<div id="uploader_field_cross_domain_no_chunks" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+				<div></div>
+			</td>
+		</tr>
+		<tr>
+			<td>
 				Validations
 			</td>
 			<td>
@@ -510,7 +571,7 @@ html, body {
 				Custom button
 			</td>
 			<td>
-				<div id="uploader_field_custom_button" class="uploader_field custom">
+				<div id="uploader_field_custom_button" class="uploader_field custom_html">
 					<div class="btn" style="padding: 20px;">
 						Upload it!
 					</div>
