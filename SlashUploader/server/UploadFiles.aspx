@@ -3,35 +3,35 @@
 <%@ Import Namespace="System.Drawing" %>
 <%@ Import Namespace="System.Drawing.Drawing2D" %>
 <%
-Response.AppendHeader("Access-Control-Allow-Origin", "*");
-
-string FileFolder = "./uploads/";
-bool DoOverwriteFilename = false;
-bool SaveFileWithGuidFilename = false;
+    Response.AppendHeader("Access-Control-Allow-Origin", "*");
     
-try {
-        
-    if (ValidateFilesTypes())
-    {
-        string Method = Request["method"];
-        if (Method == "combine_chunks") {
-            CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-        } else if (Method == "upload_chunk") {
-            UploadChunk(FileFolder);
-        } else if (Method == "upload_through_iframe") {
-            UploadThroughIframe(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-        } else if (Method == "upload_stream") {
-            UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+    string FileFolder = "./uploads/";
+    bool DoOverwriteFilename = false;
+    bool SaveFileWithGuidFilename = false;
+
+    try {
+
+        if (ValidateFilesTypes())
+        {
+            string Method = Request["method"];
+            if (Method == "combine_chunks") {
+                CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+            } else if (Method == "upload_chunk") {
+                UploadChunk(FileFolder);
+            } else if (Method == "upload_through_iframe") {
+                UploadThroughIframe(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+            } else if (Method == "upload_stream") {
+                UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+            }
+
+        } else
+        {
+            ResponseError("File type is not allowed. The only allowed file types to upload are images, media, plain text and documents.");
         }
 
-    } else
-    {
-        ResponseError("File type is not allowed. The only allowed file types to upload are images, media, plain text and documents.");
+    } catch (Exception e) {
+        ResponseError(e);
     }
-        
-} catch (Exception e) {
-    ResponseError(e);
-}
 %>
 
 <script runat="server">
@@ -113,7 +113,7 @@ try {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         string FileName = PageApp.Request["file_name"];
         bool FileTypeIsValid = true;
-        if (!IsFileTypeValid (FileName))
+        if (!string.IsNullOrEmpty(FileName) && !IsFileTypeValid (FileName))
         {
             FileTypeIsValid = false;
         }
@@ -285,7 +285,7 @@ try {
         FileName = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
         byte[] FileData = PageApp.Request.BinaryRead(PageApp.Request.TotalBytes);
 
-        if (FileData.Length > 0) {
+        //if (FileData.Length > 0) {
 
             string Extension = GetFileExtension(FileName).ToLower();
             if (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp") {
@@ -306,9 +306,9 @@ try {
             ReturnObj["file_name"] = FileName;
             ReturnObj["file_path"] = GetFileUrl (FileName, FileFolder);
 
-        } else {
+        /*} else {
             ReturnObj["error"] = "No stream data";
-        }
+        }*/
 
         return ReturnObj;
     }
