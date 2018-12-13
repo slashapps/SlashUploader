@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.1
+ * SlashUploader - JS plugin - Version 1.5.2
  * Copyright (c) 2018 Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
  */
@@ -66,11 +66,12 @@ function SlashUploader (element, opts) {
 
 		} else if (variableName == "showUploadedFiles") {
 			if (instance.showUploadedFiles) {
-				noJquery(instance.elements.uploaderResultWrapperElement).attr("style", "");
-				noJquery(instance.elements.uploaderDropAreaWrapper).attr("style", "");
+				//noJquery(instance.elements.uploaderResultWrapperElement).attr("style", "");
+				noJquery(instance.elements.uploaderDropAreaWrapper).css("width", "");
+				noJquery(instance.elements.uploaderDropAreaWrapper).css("display", "");
 			} else {
 				noJquery(instance.elements.uploaderResultWrapperElement).attr("style", "width: 0px; display: none;");
-				noJquery(instance.elements.uploaderDropAreaWrapper).attr("style", "width: 100%;");
+				noJquery(instance.elements.uploaderDropAreaWrapper).css("width", "100%");
 			}
 		} else if (variableName == "disabled") {
 			if (instance.disabled) {
@@ -86,11 +87,15 @@ function SlashUploader (element, opts) {
 			} else {
 				noJquery("#"+instance.elements.elementId).removeClass("rtl");
 			}
+		} else if (variableName == "height") {
+			instance._internalVariables.setHeight();
 		} else if (variableName == "enableDropFiles") {
 			instance._internalVariables.setDropFileEvents();
 		} else if (variableName == "progressAnimationType") {
 			instance._internalVariables.setProgressDisplay();
-		} else if (variableName == "maxFileChars" || variableName == "uploadedFiles") {
+		} else if (variableName == "showFocusRect") {
+			instance._internalVariables.setShowFocusRect();
+		} else if (variableName == "maxFileChars" || variableName == "uploadedFiles" || variableName == "uploadedFileHtml") {
 			instance._internalVariables.showCurrentFiles();
 		}
 		instance._internalVariables.setText();
@@ -197,6 +202,24 @@ function SlashUploader (element, opts) {
 	        this._internalVariables.setVariable("rtl");
 	    }
 	});
+	Object.defineProperty(this, 'height', {
+	    get: function() {
+	        return _variables.height;
+	    },
+	    set: function(value) {
+	        _variables.height = value;
+	        this._internalVariables.setVariable("height");
+	    }
+	});
+	Object.defineProperty(this, 'showFocusRect', {
+	    get: function() {
+	        return _variables.showFocusRect;
+	    },
+	    set: function(value) {
+	        _variables.showFocusRect = value;
+	        this._internalVariables.setVariable("showFocusRect");
+	    }
+	});
 	Object.defineProperty(this, 'dropFilesText', {
 	    get: function() {
 	        return _variables.dropFilesText;
@@ -257,7 +280,7 @@ function SlashUploader (element, opts) {
 	    },
 	    set: function(value) {
 	        _variables.uploadedFileHtml = value;
-	        this._internalVariables.setVariable();
+	        this._internalVariables.setVariable("uploadedFileHtml");
 	    }
 	});
 	Object.defineProperty(this, 'cancelText', {
@@ -277,6 +300,14 @@ function SlashUploader (element, opts) {
 	    	var curServerScripts = this.serverScripts;
 	    	noJquery.extend(curServerScripts, value);
 	    	_variables.serverScripts = curServerScripts;
+	    }
+	});
+	Object.defineProperty(this, 'isUploading', {
+	    get: function() {
+			if (this._internalVariables != null) {
+				return this._internalVariables.isUploading;
+			}
+	        return false;
 	    }
 	});
 
@@ -314,7 +345,9 @@ function SlashUploader (element, opts) {
 	_variables.enableDropFiles = true;
 	_variables.maxFiles = 9999;
 	_variables.progressAnimationType = "inline";
-	_variables.maxFileChars = 22;
+	_variables.height = 80;
+	_variables.showFocusRect = false;
+	_variables.maxFileChars = 20;
     _variables.uploadedFiles = [];
     _variables.browseText = "Drop files here or click to upload";
     _variables.browseTextDropDisabled = "Click to upload";
@@ -349,6 +382,7 @@ function SlashUploader (element, opts) {
 	this.errors.invalidFileExtension = "Invalid file extension ({{file_name}})";
 	this.errors.invalidFileSize = "Invalid file size ({{file_name}})";
 	this.errors.uploadFailed = "Failed to upload";
+	this.errors.parseFailed = "Failed to parse result";
 	this.errors.unspecifiedError = "Unspecified error";
 
 	
@@ -376,11 +410,14 @@ function SlashUploader (element, opts) {
 			if (prevVars.progressAnimationType != instance.progressAnimationType) {
 	        	instance._internalVariables.setVariable("progressAnimationType");
 			}
-			if (prevVars.maxFileChars != instance.maxFileChars) {
-	        	instance._internalVariables.setVariable("maxFileChars");
-			}
-			if (prevVars.uploadedFiles != instance.uploadedFiles) {
-	        	instance._internalVariables.setVariable("uploadedFiles");
+			if (!(noJquery(instance.elements.uploaderResultElement).hasClass("error") && noJquery(instance.elements.uploaderResultElement).html() != "")) {
+				// Prevent refresh when error is displayed
+				if (prevVars.maxFileChars != instance.maxFileChars) {
+					instance._internalVariables.setVariable("maxFileChars");
+				}
+				if (prevVars.uploadedFiles != instance.uploadedFiles) {
+					instance._internalVariables.setVariable("uploadedFiles");
+				}
 			}
 			if (prevVars.rtl != instance.rtl) {
 	        	instance._internalVariables.setVariable("rtl");
@@ -395,8 +432,10 @@ function SlashUploader (element, opts) {
 	        prevVars.progressAnimationType = instance.progressAnimationType;
 	        prevVars.maxFileChars = instance.maxFileChars;
 	        prevVars.uploadedFiles = instance.uploadedFiles;
-	        prevVars.rtl = instance.rtl;
-	        
+			prevVars.rtl = instance.rtl;
+			prevVars.height = instance.height;
+			prevVars.showFocusRect = instance.showFocusRect;
+			
 	    	noJquery.extend(prevServerScripts, instance.serverScripts);
 	    	instance.serverScripts = prevServerScripts;
 	    	
@@ -485,10 +524,10 @@ function SlashUploader (element, opts) {
 				}
 				noJquery(instance.elements.containerElement).addClass("slash_uploader");
 
-				if (
-					instance.customHTML
-					|| (IEVersion >= 0 && IEVersion <= 8)
-					) {
+				//if (
+				//	instance.customHTML
+				//	|| (IEVersion >= 0 && IEVersion <= 8)
+				//	) {
 					noJquery(instance.elements.containerElement).on("mousemove", function(event) {
 						var element = this;
 						if (noJquery(this).find(".uploader_drop_area_wrapper")[0] != null) {
@@ -497,7 +536,7 @@ function SlashUploader (element, opts) {
 						noJquery(instance.elements.uploaderDropAreaElement).find("input").css("left", event.pageX-noJquery(element).offset().left-120);
 						noJquery(instance.elements.uploaderDropAreaElement).find("input").css("top", event.pageY-noJquery(element).offset().top-20);
 					});
-				}
+				//}
 				
 			    if (!instance.customHTML) {
 					instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").get(0);
@@ -520,6 +559,7 @@ function SlashUploader (element, opts) {
 
 				instance._internalVariables.buildFileInput ();
 				instance._internalVariables.setProgressDisplay();
+				instance._internalVariables.setShowFocusRect();
 				instance._internalVariables.setText();
 				instance._internalVariables.setDocumentEvents();
 				instance._internalVariables.setDropFileEvents();
@@ -537,6 +577,29 @@ function SlashUploader (element, opts) {
 			instance._internalVariables.consoleError("Element not exist in DOM.");
 		}
 		
+	};
+
+	this._internalVariables.setShowFocusRect = function () {
+		var instance = this.instance;
+		if (instance.showFocusRect) {
+			noJquery(instance.elements.containerElement).addClass("show_focus_rect");
+		} else {
+			noJquery(instance.elements.containerElement).removeClass("show_focus_rect");
+		}
+	};
+
+	this._internalVariables.setHeight = function () {
+		var instance = this.instance;
+		var curHeight = instance.height;
+		if (instance.progressAnimationType.indexOf("bar") != -1) {
+			curHeight -= 25;
+		}
+		if (!instance.customHTML) {
+			noJquery(instance.elements.containerElement).css("min-height", instance.height+"px");
+		}
+		noJquery(instance.elements.uploaderDropAreaWrapper).css("height", curHeight+"px");
+		//noJquery(instance.elements.uploaderResultWrapperElement).css("min-height", curHeight+"px");
+		noJquery(instance.elements.uploaderResultWrapperElement).css("height", curHeight+"px");
 	};
 
 	this._internalVariables.setProgressDisplay = function () {
@@ -570,6 +633,7 @@ function SlashUploader (element, opts) {
 		    }
 
 		}
+		instance._internalVariables.setHeight();
 
 	}
 
@@ -665,7 +729,13 @@ function SlashUploader (element, opts) {
 	        }
 
 	    }
-	    instance.elements.uploaderInputElement = noJquery(instance.elements.containerElement).find("input")[0];
+		instance.elements.uploaderInputElement = noJquery(instance.elements.containerElement).find("input")[0];
+		instance.elements.uploaderInputElement.onfocus = function(){
+			noJquery(instance.elements.containerElement).addClass("focused");
+		}
+		instance.elements.uploaderInputElement.onblur = function(){
+			noJquery(instance.elements.containerElement).removeClass("focused");
+		}
 	    instance._internalVariables.setVariable("acceptOnlyFilesTypes");
 	    instance._internalVariables.setVariable("showUploadedFiles");
 	    instance._internalVariables.setVariable("disabled");
@@ -873,28 +943,37 @@ function SlashUploader (element, opts) {
 		var instance = this.instance;
 		if (instance.elements.containerElement != null && instance.elements.uploaderTextElement != null) {
 
+			var curText = "";
 			if (!instance.disabled && !instance._internalVariables.isUploading) {
 				
 				if (instance._internalVariables.draggedOnBtn) {
-					noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
+					curText = instance.dropFilesText;
+					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
 				} else if (instance._internalVariables.draggedOnDocument) {
-					noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
+					curText = instance.dropFilesText;
+					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
 				} else if (instance._internalVariables.hoverOnBtn) {
-					noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
+					curText = instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled;
+					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
 				} else {
-					noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
+					curText = instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled;
+					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
 				}
 				noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "none");
 
 			} else if (instance._internalVariables.isUploading) {
-        		noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.getUploadingText());
+				curText = instance._internalVariables.getUploadingText();
+        		//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.getUploadingText());
         		noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "");
 			} else {
-				noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
+				curText = instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled;
+				//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
         		noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "none");
 			}
-
+			noJquery(instance.elements.uploaderTextElement).find('span').html(curText);
+			noJquery(instance.elements.uploaderInputElement).attr('aria-label', curText);
 			noJquery(instance.elements.uploaderCancelButton).find('span').html(instance.cancelText);
+
 		}
 
 	}
@@ -995,8 +1074,6 @@ function SlashUploader (element, opts) {
 			rotation: null,
 			duration: null
 		};
-
-
 
 		if(instance._internalVariables.isImg(file.name) && instance.doGetFileMetadata) {
 
@@ -1106,10 +1183,10 @@ function SlashUploader (element, opts) {
 
 		var instance = this.instance;
 		var curFileData = instance._internalVariables.curUploadingFilesData[instance._internalVariables.curUploadingFileIndex];
-		curFileData.duration = fileMetadata.duration;
-		curFileData.width = fileMetadata.width;
-		curFileData.height = fileMetadata.height;
-		curFileData.rotation = fileMetadata.rotation;
+		curFileData.duration = fileMetadata.duration || null;
+		curFileData.width = fileMetadata.width || null;
+		curFileData.height = fileMetadata.height || null;
+		curFileData.rotation = fileMetadata.rotation || null;
 		var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex+1) || (instance._internalVariables.curUploadingFileIndex+1 >= instance.maxFiles);
 		if (isLastFile) {
 
@@ -1240,16 +1317,20 @@ function SlashUploader (element, opts) {
 
 				xhr.addEventListener("load", function () {
 					var result = xhr.responseText;
+					
 					try {
+
 				        instance._internalVariables.curUploadingFileIndex ++;
 				        var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
 				        if (isLastFile) {
 				        	//instance._internalVariables.curUploadingFileIndex = Math.min(instance._internalVariables.curUploadingFilesData.length, instance.maxFiles)-1;
 				        	instance._internalVariables.curUploadingFileIndex --;
 				        }
+
 				        var jsonObj = JSON.parse(result);
 
 				        function parseUploadResult () {
+
 				        	instance._internalVariables.parseUploadResult (jsonObj, isLastFile, files[fileIndex].file);
 				        	
 				            if (!isLastFile && instance._internalVariables.curUploadingFilesData.length > 0) {
@@ -1265,9 +1346,13 @@ function SlashUploader (element, opts) {
 				        	parseUploadResult();
 				        }
 					    noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).animate({opacity: 0}, 200);
+
 					} catch (err) {
-						instance._internalVariables.setError('upload_failed', files[fileIndex], result);
+
+						instance._internalVariables.consoleError(err);
+						instance._internalVariables.setError('parse_failed', files[fileIndex], result);
 			        	instance._internalVariables.uploadFileChunkXhr = null;
+
 					}
 					
 
@@ -1300,10 +1385,11 @@ function SlashUploader (element, opts) {
 				//script += "&_="+Math.random();
 
 				instance._internalVariables.onFileProgress (0);
+
 				uploaerIframeGateway.uploadViaIframeGateway (
 					instance.elements.elementId,
 					script,
-					window.location.href.substr(0, window.location.href.lastIndexOf("/"))+"/"+instance.iframeGateway,
+					instance._internalVariables.getIframeGatewayFullUrl(),
 					function (data) {
 						instance._internalVariables.curUploadingFileIndex = instance._internalVariables.totalFilesToUpload-1;
 						instance._internalVariables.onFileProgress (1);
@@ -1354,16 +1440,32 @@ function SlashUploader (element, opts) {
 					try {
 
 						var result = JSON.parse(this.response);
-						for (var i=0; i<result.length; i++) {
-							if (result[i][instance.serverScripts.errorVariableName] != null && result[i][instance.serverScripts.errorVariableName] != "") {
-								instance._internalVariables.setError('upload_failed', file, result[i]);
-								hasError = true;
-								break;
+						if (Array.isArray(result)) {
+
+							for (var i=0; i<result.length; i++) {
+								if (result[i][instance.serverScripts.errorVariableName] != null && result[i][instance.serverScripts.errorVariableName] != "") {
+									instance._internalVariables.setError('upload_failed', file, result[i]);
+									hasError = true;
+									break;
+								}
 							}
+							
+						} else if (typeof(result) == "object") {
+
+							if (result[instance.serverScripts.errorVariableName] != null && result[instance.serverScripts.errorVariableName] != "") {
+								instance._internalVariables.setError('upload_failed', file, result);
+								hasError = true;
+							}
+
+						} else {
+							instance._internalVariables.setError('parse_failed', file, null);
+							hasError = true;
 						}
 
 					} catch (err) {
+						instance._internalVariables.consoleError(err);
 					}
+
 					if (hasError) {
 						instance._internalVariables.abortAndCancelUpload();
 					} else {
@@ -1408,6 +1510,7 @@ function SlashUploader (element, opts) {
 			url: script,
 			dataType: 'jsonp',
 			success: function(data) {
+
 				instance._internalVariables.curUploadingFileIndex ++;
 	            var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
 	            instance._internalVariables.parseUploadResult (data, isLastFile, file);
@@ -1440,7 +1543,12 @@ function SlashUploader (element, opts) {
 			noJquery(instance.elements.uploaderProgressBarColorElement).css("width", ((curBarProgress) + "%"));
 		}
 		if (instance.progressAnimationType.indexOf("inline") != -1) {
-			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("width", Math.ceil(progress*100)+"%");
+			var totalWidth = 100;
+			var ieVersion = instance._internalVariables.getIEVersion();
+			if (ieVersion >= 9 && ieVersion <= 10) { // For IE10 + IE9
+				totalWidth = 99;
+			}
+			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("width", Math.ceil(progress*totalWidth)+"%");
 			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("width", noJquery(instance.elements.uploaderDropAreaElement).outerWidth());
 		}
 
@@ -1467,7 +1575,7 @@ function SlashUploader (element, opts) {
 		instance._internalVariables.isUploading = false;
 		instance._internalVariables.showUploadBtn();
     	if (instance._internalVariables.getUploadType() == "iframe") {
-	    	uploaerIframeGateway.cancelUpload (instance.elements.elementId, instance.iframeGateway);
+	    	uploaerIframeGateway.cancelUpload (instance.elements.elementId, instance._internalVariables.getIframeGatewayFullUrl());
 	    }
 
 	}
@@ -1483,14 +1591,32 @@ function SlashUploader (element, opts) {
 		var instance = this.instance;
 		var hasError = false;
 		
-		for (var i=0; i<result.length; i++) {
-			if (result[i][instance.serverScripts.fileNameVariableName] == null || result[i][instance.serverScripts.fileNameVariableName] == "") {
-				instance._internalVariables.setError('upload_failed', file, result[i]);
-				hasError = true;
-				break;
-			} else {
-				instance.uploadedFiles.push (result[i]);
+		if (Array.isArray(result)) {
+
+			for (var i=0; i<result.length; i++) {
+				if (result[i][instance.serverScripts.fileNameVariableName] == null || result[i][instance.serverScripts.fileNameVariableName] == "") {
+					instance._internalVariables.setError('upload_failed', file, result[i]);
+					hasError = true;
+					break;
+				} else {
+					instance.uploadedFiles.push (result[i]);
+				}
 			}
+
+		} else if (typeof(result) == "object") {
+			
+			if (result[instance.serverScripts.fileNameVariableName] == null || result[instance.serverScripts.fileNameVariableName] == "") {
+				instance._internalVariables.setError('upload_failed', file, result);
+				hasError = true;
+			} else {
+				instance.uploadedFiles.push (result);
+			}
+
+		} else {
+
+			instance._internalVariables.setError('parse_failed', file, null);
+			hasError = true;
+
 		}
 
 	    if (isLastFile && !hasError) {
@@ -1529,7 +1655,7 @@ function SlashUploader (element, opts) {
 			        }
 		    	}
 		    	noJquery(instance.elements.uploaderResultElement).html(filesListHtml);
-		    	
+
 		    }
 
 		    var deleteBtns = instance.elements.containerElement.querySelectorAll(".uploader_delete_btn");
@@ -1575,10 +1701,12 @@ function SlashUploader (element, opts) {
 		for (var i=0; i<errors.length; i++) {
 			var curError = errors[i];
 			var curErrorText;
-			if (curError.error == "invalid_file_extension") {
+			if (curError.error == "invalid_file_extension" || (curError.error_object != null && curError.error_object.error == "invalid_file_extension")) {
 				curErrorText = instance.errors.invalidFileExtension;
-			} else if (curError.error == "invalid_file_size") {
+			} else if (curError.error == "invalid_file_size" || (curError.error_object != null && curError.error_object.error == "invalid_file_size")) {
 				curErrorText = instance.errors.invalidFileSize;
+			} else if (curError.error == "parse_failed" || (curError.error_object != null && curError.error_object.error == "parse_failed")) {
+				curErrorText = instance.errors.parseFailed;
 			} else if (curError.error == "upload_failed") {
 
 				if (instance.showDetailedErrorFromServer && curError.error_object != null && curError.error_object.error != null && curError.error_object.error != "") {
@@ -1633,6 +1761,20 @@ function SlashUploader (element, opts) {
 		
 		var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
 		var isIE = navigator.userAgent.indexOf("MSIE") != -1;
+
+		var callerFunction = "";
+        if (arguments != null && arguments.callee != null && arguments.callee.caller != null) {
+            callerFunction = arguments.callee.caller.toString()
+        }
+        if (callerFunction == null || callerFunction == "") {
+            if (this._internalVariables.consoleError.caller != null) {
+                callerFunction = this._internalVariables.consoleError.caller.toString()
+            }
+        }
+        if (callerFunction != null && callerFunction != "") {
+        //	errorText += " (from: "+callerFunction+")";
+        }
+
 		if (typeof(console) != "undefined") {
 			if (isIE11 || isIE) {
 				console.warn ("Uploader: "+errorText);
@@ -1786,19 +1928,40 @@ function SlashUploader (element, opts) {
 
 	}
 
+	this._internalVariables.getIframeGatewayFullUrl = function () {
+		
+		var instance = this.instance;
+		var iframeGatewayFullUrl = "";
+		if (instance.iframeGateway.indexOf("//") == 0 || instance.iframeGateway.indexOf("http://") == 0 || instance.iframeGateway.indexOf("https://") == 0) {
+			iframeGatewayFullUrl = instance.iframeGateway;
+		} else {
+			iframeGatewayFullUrl = window.location.href.substr(0, window.location.href.lastIndexOf("/"))+"/"+instance.iframeGateway;
+		}
+		return iframeGatewayFullUrl;
+
+	}
+
 	this._internalVariables.validateIframeGatewayPath = function () {
 
 		var instance = this.instance;
-		var iframeGatewayFullUrl = window.location.href.substr(0, window.location.href.lastIndexOf("/"))+"/"+instance.iframeGateway;
-		noJquery.ajax({
-			type: "HEAD",
-			url: iframeGatewayFullUrl,
-			success: function(data) {
-			},
-			error: function(jqXHR, exception) {
-				instance._internalVariables.consoleError("Iframe gateway can't be found at "+iframeGatewayFullUrl);
-			}
-		});
+		var iframeGatewayFullUrl = instance._internalVariables.getIframeGatewayFullUrl();
+		if (instance._internalVariables.isCrossDomainScript(iframeGatewayFullUrl)) {
+
+			instance._internalVariables.consoleError("Iframe gateway must be at same domain as current page, not at "+iframeGatewayFullUrl);
+
+		} else {
+
+			noJquery.ajax({
+				type: "HEAD",
+				url: iframeGatewayFullUrl,
+				success: function(data) {
+				},
+				error: function(jqXHR, exception) {
+					instance._internalVariables.consoleError("Iframe gateway can't be found at "+iframeGatewayFullUrl);
+				}
+			});
+
+		}
 
 	};
 
@@ -2060,9 +2223,11 @@ noJquery.fn.css = function(styleAttr, val) {
 
 			if (
 				(styleAttr == "width"
+        		|| styleAttr == "height"
         		|| styleAttr == "left"
         		|| styleAttr == "top")
-				&& !isNaN(val)) {
+				&& !isNaN(val)
+				&& val != null && val != "") {
 				val += "px";
 			}
 
@@ -2425,6 +2590,13 @@ if(typeof String.prototype.trim !== 'function') {
   String.prototype.trim = function() {
     return this.replace(/^\s+|\s+$/g, ''); 
   }
+}
+
+// IE8 polyfill for Array.isArray
+if(typeof Array.isArray !== 'function') {
+	Array.isArray = function (obj) {
+		return Object.prototype.toString.call(obj) === "[object Array]";
+	};
 }
 
 

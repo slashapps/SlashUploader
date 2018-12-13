@@ -38,10 +38,18 @@ function iframeGateway () {
 	var uploaderIndex = getQuerystringParamValue("request_id");
     if (uploaderIndex != null && uploaderIndex != "") {
         var data = decodeURIComponent(getQuerystringParamValue("data"));
-        var obj = $.parseJSON(decodeURIComponent(decodeURIComponent(data.replace(/\+/g,  " "))));
-        
-        if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
-            window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted (uploaderIndex, obj);
+        try {
+            var obj = $.parseJSON(decodeURIComponent(decodeURIComponent(data.replace(/\+/g,  " "))));
+            if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
+                window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted (uploaderIndex, obj);
+            }
+        } catch (e) {
+            var errors = [];
+            errors.push({error: 'parse_failed'});
+            if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
+                window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted (uploaderIndex, errors);
+            }
+            //instance._internalVariables.parseErrors(errors);
         }
     }
 	
