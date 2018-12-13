@@ -2,17 +2,34 @@
 <%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Drawing" %>
 <%@ Import Namespace="System.Drawing.Drawing2D" %>
+<%@ Import Namespace="System.Security.AccessControl" %>
+<%@ Import Namespace="System.Security.Principal" %>
+
 <%
     Response.AppendHeader("Access-Control-Allow-Origin", "*");
-    
+
     string FileFolder = "./uploads/";
     bool DoOverwriteFilename = false;
     bool SaveFileWithGuidFilename = false;
+    String[] AllowedFilesTypes = {
+        "jpg", "png", "gif", "jpeg", "bmp", "tiff", // Images
+        "3gp2", "3gpp", "3gpp2", "asf", "asx", "avi", "flv", "m4v", "mkv", "mov", "mpeg", "mpg", "mpe", "m1s", "mpa", "mp2", "m2a", "mp2v", "m2v", "m2s", "mp4", "ogg", "rm", "wmv", "mp4", "qt", "ogm", "vob", "webm", "787", // Videos
+        "3gp", "act", "aiff", "aac", "alac", "amr", "atrac", "au", "awb", "dct", "dss", "dvf", "flac", "gsm", "iklax", "ivs", "m4a", "m4p", "mmf", "mp3", "mpc", "msv", "ogg", "opus", "raw", "tta", "vox", "wav", "wma", // Audios
+        "txt", // plain Text
+        "doc", "docb", "docm", "docx", "dot", "dotm", "dotx", "pdf", "pot", "potm", "potx", "ppam", "pps", "ppsx", "ppt", "pptm", "pptx", "sldm", "sldx", // Docs
+        "csv", "xla", "xlam", "xll", "xlm", "xls","xlsb", "xslm", "xlsx", "xlt", "xltm", "xltx", "xlw" // Excel
+    };
 
     try {
 
-        if (ValidateFilesTypes())
+        string GeneralError = GetGeneralError(FileFolder, AllowedFilesTypes);
+        if (!string.IsNullOrEmpty(GeneralError))
         {
+            ResponseError(GeneralError);
+        }
+        else
+        {
+
             string Method = Request["method"];
             if (Method == "combine_chunks") {
                 CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
@@ -23,10 +40,6 @@
             } else if (Method == "upload_stream") {
                 UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
             }
-
-        } else
-        {
-            ResponseError("File type is not allowed. The only allowed file types to upload are images, media, plain text and documents.");
         }
 
     } catch (Exception e) {
@@ -108,12 +121,12 @@
         PageApp.Response.Write (GetJsonResponse(FileDataJson));
     }
 
-    public static bool ValidateFilesTypes ()
+    public static bool ValidateFilesTypes (String[] AllowedFilesTypes)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         string FileName = PageApp.Request["file_name"];
         bool FileTypeIsValid = true;
-        if (!string.IsNullOrEmpty(FileName) && !IsFileTypeValid (FileName))
+        if (!string.IsNullOrEmpty(FileName) && !IsFileTypeValid (FileName, AllowedFilesTypes))
         {
             FileTypeIsValid = false;
         }
@@ -122,7 +135,7 @@
             for (int i = 0; i < PageApp.Request.Files.Count; i++)
             {
                 HttpPostedFile PostedFile = PageApp.Request.Files[i];
-                if (!IsFileTypeValid (PostedFile.FileName))
+                if (!IsFileTypeValid (PostedFile.FileName, AllowedFilesTypes))
                 {
                     FileTypeIsValid = false;
                 }
@@ -180,16 +193,72 @@
 
     }
 
+    public static string GetGeneralError (string FileFolder, String[] AllowedFilesTypes)
+    {
+        System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+        if (!ValidateFilesTypes(AllowedFilesTypes))
+        {
+            return "File type is not allowed. The only allowed file types to upload are images, media, plain text and documents.";
+        }
+        else if (!Directory.Exists(PageApp.Server.MapPath(FileFolder)))
+        {
+            return "Directory '"+PageApp.Server.MapPath(FileFolder)+"' doesn't exist.";
+        }
+        else if (!DirectoryHasWritePermission (PageApp.Server.MapPath(FileFolder)))
+        {
+            return "Directory '"+PageApp.Server.MapPath(FileFolder)+"' doesn't have write permissions.";
+        }
+        return null;
+    }
+
+    public static bool DirectoryHasWritePermission (string DirectoryPath)
+    {
+        var AllowWrite = false;
+        var DenyWrite = false;
+        var AccessControlList = Directory.GetAccessControl(DirectoryPath);
+        if (AccessControlList == null)
+        {
+            return false;
+        }
+        var AccessRules = AccessControlList.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+        if (AccessRules == null)
+        {
+            return false;
+        }
+        WindowsIdentity CurrentUser = WindowsIdentity.GetCurrent();
+        WindowsPrincipal Principal = new WindowsPrincipal(CurrentUser);
+        foreach (FileSystemAccessRule CurRule in AccessRules)
+        {
+            NTAccount CurNtAccount = CurRule.IdentityReference as NTAccount;
+            if (CurNtAccount != null && (CurRule.FileSystemRights & FileSystemRights.Write) > 0)
+            {
+                if (Principal.IsInRole(CurNtAccount.Value))
+                {
+                    if (CurRule.AccessControlType == AccessControlType.Allow)
+                    {
+                        AllowWrite = true;
+                    }
+                    else if (CurRule.AccessControlType == AccessControlType.Deny)
+                    {
+                        DenyWrite = true;
+                    }
+                }
+            }
+        }
+
+        return AllowWrite && !DenyWrite;
+    }
+
     public static void ResponseError(Exception Exp)
     {
-        ResponseError(ParseJsonStringValue(Exp.Message+" "+Exp.StackTrace));
+        ResponseError(Exp.Message+" "+Exp.StackTrace);
     }
 
     public static void ResponseError (string ErrorString)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         NameValueCollection ErrorResult = new NameValueCollection();
-        ErrorResult["error"] = ErrorString;
+        ErrorResult["error"] = ParseJsonStringValue(ErrorString);
         string ErrorJson = GetFileJson(ErrorResult);
         string Method = PageApp.Request["method"];
         if (Method == "upload_through_iframe")
@@ -285,8 +354,9 @@
         FileName = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
         byte[] FileData = PageApp.Request.BinaryRead(PageApp.Request.TotalBytes);
 
-        //if (FileData.Length > 0) {
-
+        if (FileData.Length > 0)
+        {
+            /*
             string Extension = GetFileExtension(FileName).ToLower();
             if (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp") {
 
@@ -303,12 +373,15 @@
             } else {
                 File.WriteAllBytes(PageApp.Server.MapPath(FileFolder)+FileName, FileData);
             }
+            */
+            File.WriteAllBytes(PageApp.Server.MapPath(FileFolder) + FileName, FileData);
+
             ReturnObj["file_name"] = FileName;
             ReturnObj["file_path"] = GetFileUrl (FileName, FileFolder);
 
-        /*} else {
+        } else {
             ReturnObj["error"] = "No stream data";
-        }*/
+        }
 
         return ReturnObj;
     }
@@ -538,18 +611,10 @@
         return (Guid.NewGuid().ToString());
     }
 
-    public static bool IsFileTypeValid (string FileName)
+    public static bool IsFileTypeValid (string FileName, String[] AllowedFilesTypes)
     {
-        String[] AllowedTypes = {
-            "jpg", "png", "gif", "jpeg", "bmp", "tiff", // Images
-            "3gp2", "3gpp", "3gpp2", "asf", "asx", "avi", "flv", "m4v", "mkv", "mov", "mpeg", "mpg", "mpe", "m1s", "mpa", "mp2", "m2a", "mp2v", "m2v", "m2s", "mp4", "ogg", "rm", "wmv", "mp4", "qt", "ogm", "vob", "webm", "787", // Videos
-            "3gp", "act", "aiff", "aac", "alac", "amr", "atrac", "au", "awb", "dct", "dss", "dvf", "flac", "gsm", "iklax", "ivs", "m4a", "m4p", "mmf", "mp3", "mpc", "msv", "ogg", "opus", "raw", "tta", "vox", "wav", "wma", // Audios
-            "txt", // plain Text
-            "doc", "docb", "docm", "docx", "dot", "dotm", "dotx", "pdf", "pot", "potm", "potx", "ppam", "pps", "ppsx", "ppt", "pptm", "pptx", "sldm", "sldx", // Docs
-            "csv", "xla", "xlam", "xll", "xlm", "xls","xlsb", "xslm", "xlsx", "xlt", "xltm", "xltx", "xlw" // Excel
-        };
         string Extension = GetFileExtension(FileName).ToLower();
-        if (!string.IsNullOrEmpty(Extension) && Array.IndexOf(AllowedTypes, Extension) >= 0)
+        if (!string.IsNullOrEmpty(Extension) && Array.IndexOf(AllowedFilesTypes, Extension) >= 0)
         {
             return true;
         } else
