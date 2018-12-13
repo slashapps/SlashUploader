@@ -105,7 +105,8 @@ function buildUploaders () {
 		onFilesProgress: onFilesProgress,
 		onFileDeleted: onFileDeleted,
 		onCanceled: onCanceled,
-		onError: onError
+		onError: onError,
+		showFocusRect: true
 	});
 	uploaderSingleFile.dropFilesText = "Drop file here";
 	uploaderSingleFile.browseText = "Drop file here or click to upload";
@@ -180,6 +181,7 @@ function buildUploaders () {
 	});
 	uploaderRtl.progressAnimationType = "inline|bar";
 	uploaderRtl.rtl = true;
+	uploaderRtl.maxFileChars = 10;
 	uploaderRtl.browseText = "הנח קבצים כאן או לחץ לבחירת קבצים";
 	uploaderRtl.browseTextDropDisabled = "לחץ לבחירת קובץ";
 	uploaderRtl.dropFilesText = "הנח קבצים כאן";
@@ -189,7 +191,13 @@ function buildUploaders () {
 	uploaderRtl.uploadingFilesTextProgressBar = "מעלה {{total_files}} קבצים...";
 	uploaderRtl.uploadingFileByFileText = "מעלה את הקובץ \"{{current_file_name}}\" (קובץ {{current_file_index}} מתוך {{total_files}})";
 	uploaderRtl.cancelText = "ביטול";
-
+	uploaderRtl.errors = {
+		invalidFileExtension: "סוג הקובץ לא נתמך",
+		invalidFileSize: "הקובץ כבד מדי",
+		parseFailed: "פירסוס מידע נכשל",
+		unspecifiedError: "תקלה לא מזוהת",
+		uploadFailed: "העלאה נכשלה"
+	};
 
 	uploaderNoDragDrop = new SlashUploader (document.getElementById("uploader_no_drag_drop"), {
 		onFilesSelected: onFilesSelected,
@@ -277,6 +285,7 @@ function buildUploaders () {
 		onError: onError
 	});
 	uploaderNoOverwrite.resetFilesOnEachUpload = false;
+	uploaderNoOverwrite.progressAnimationType = "inline|bar";
 
 
 	uploaderCustomCss = new SlashUploader (document.getElementById("uploader_custom_css"), {
@@ -285,7 +294,8 @@ function buildUploaders () {
 		onFilesProgress: onFilesProgress,
 		onFileDeleted: onFileDeleted,
 		onCanceled: onCanceled,
-		onError: onError
+		onError: onError,
+		height: 150
 	});
 	uploaderCustomCss.progressAnimationType = "inline|bar";
 
@@ -308,11 +318,15 @@ function buildUploaders () {
 html, body {
 	font-family: arial;
 }
-.uploader_field {
-	width: 450px; height: 160px;
+
+.uploader_field_container {
 	background: #F7F7F7;
 	border: 1px solid #CCC;
 	border-radius: 2px;
+}
+.uploader_field {
+	width: 450px;
+	/*height: 120px;*/
 }
 #uploader_field3, #uploader_field4 {
 	height: 70px;
@@ -386,7 +400,7 @@ html, body {
 </head>
 
 <body onload="init();">
-
+	
 	<table cellpadding='6'>
 		<tr>
 			<th class="title_th">
@@ -400,7 +414,7 @@ html, body {
 			<td>
 				Default
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_default" class="uploader_field">
 				</div>
 			</td>
@@ -411,7 +425,7 @@ html, body {
 			<td>
 				Single File
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_single_file" class="uploader_field">
 				</div>
 			</td>
@@ -422,7 +436,7 @@ html, body {
 			<td>
 				Without metadata
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_no_metadata" class="uploader_field">
 				</div>
 			</td>
@@ -433,7 +447,7 @@ html, body {
 			<td>
 				Without chunks upload
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_no_chunks" class="uploader_field">
 				</div>
 			</td>
@@ -444,7 +458,7 @@ html, body {
 			<td>
 				Disabled
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_disabled" class="uploader_field">
 				</div>
 			</td>
@@ -455,7 +469,7 @@ html, body {
 			<td>
 				Pre-defined files
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_pre_defined_files" class="uploader_field">
 				</div>
 			</td>
@@ -466,7 +480,7 @@ html, body {
 			<td>
 				Progress bar animation
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_progress_bar" class="uploader_field">
 				</div>
 			</td>
@@ -477,7 +491,7 @@ html, body {
 			<td>
 				RTL
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_rtl" class="uploader_field">
 				</div>
 			</td>
@@ -488,7 +502,7 @@ html, body {
 			<td>
 				Drag & Drop disabled
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_no_drag_drop" class="uploader_field">
 				</div>
 			</td>
@@ -499,7 +513,7 @@ html, body {
 			<td>
 				Don't show uploaded files
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_no_results" class="uploader_field">
 				</div>
 			</td>
@@ -510,7 +524,7 @@ html, body {
 			<td>
 				Cross-Domain Script
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_field_cross_domain" class="uploader_field">
 				</div>
 			</td>
@@ -522,7 +536,7 @@ html, body {
 			<td>
 				Cross-Domain Script, No Chunks
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_field_cross_domain_no_chunks" class="uploader_field">
 				</div>
 			</td>
@@ -534,7 +548,7 @@ html, body {
 			<td>
 				Validations
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_field_validations" class="uploader_field">
 				</div>
 			</td>
@@ -546,7 +560,7 @@ html, body {
 			<td>
 				No overwrite
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_no_overwrite" class="uploader_field">
 				</div>
 			</td>
@@ -558,7 +572,7 @@ html, body {
 			<td>
 				Custom CSS
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_custom_css" class="uploader_field custom_css">
 				</div>
 			</td>
@@ -570,7 +584,7 @@ html, body {
 			<td>
 				Custom button
 			</td>
-			<td>
+			<td class="uploader_field_container">
 				<div id="uploader_field_custom_button" class="uploader_field custom_html">
 					<div class="btn" style="padding: 20px;">
 						Upload it!
