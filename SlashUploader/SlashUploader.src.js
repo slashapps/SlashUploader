@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.2
+ * SlashUploader - JS plugin - Version 1.5.3
  * Copyright (c) 2018 Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
  */
@@ -8,11 +8,12 @@ function FileData (file) {
 
 	this.file;
 	this.name;
-	this.size;
+	this.size; // in KB
 	this.duration;
 	this.width;
 	this.height;
 	this.extension;
+	this.rotation;
 
 	this.init = function (file) {
 		this.file = file;
@@ -21,9 +22,10 @@ function FileData (file) {
 	    	fileName = "";
 	    }
 		this.name = fileName;
-		this.size = file.size;
+		this.size = file.size/1024;
 		this.extension = fileName.substr(fileName.lastIndexOf(".")+1, 5).toLowerCase();
-	}
+	};
+
 	this.init(file);
 }
 
@@ -44,7 +46,7 @@ function SlashUploader (element, opts) {
     this._internalVariables.lastMouseX = -1;
     this._internalVariables.curMouseY = -1;
     this._internalVariables.lastMouseY = -1;
-    this._internalVariables.uploadFileChunkXhr = null;
+    this._internalVariables.uploadXhr = null;
 	this._internalVariables.displayErrorAnimationTimeoutDuration;
 	this._internalVariables.onChangeTriggered = false;
 
@@ -91,16 +93,82 @@ function SlashUploader (element, opts) {
 			instance._internalVariables.setHeight();
 		} else if (variableName == "enableDropFiles") {
 			instance._internalVariables.setDropFileEvents();
+		} else if (variableName == "enableCancelButton") {
+			instance._internalVariables.setCancelButtonDisplay();
 		} else if (variableName == "progressAnimationType") {
 			instance._internalVariables.setProgressDisplay();
 		} else if (variableName == "showFocusRect") {
 			instance._internalVariables.setShowFocusRect();
-		} else if (variableName == "maxFileChars" || variableName == "uploadedFiles" || variableName == "uploadedFileHtml") {
+		} else if (variableName == "maxFileChars" || variableName == "uploadedFiles" || variableName == "uploadedFileHtml" || variableName == "uploadedFileTemplate" || variableName == "enableDeleteButton") {
 			instance._internalVariables.showCurrentFiles();
 		}
 		instance._internalVariables.setText();
 	}
 	var _variables = {};
+	
+	this._internalVariables.defineProperty = function (propertyName, callSetVariableWithPropertyName) {
+		var instance = this.instance;
+		Object.defineProperty(instance, propertyName, {
+			get: function() {
+				return _variables[propertyName];
+			},
+			set: function(value) {
+				_variables[propertyName] = value;
+				if (callSetVariableWithPropertyName) {
+					instance._internalVariables.setVariable(propertyName);
+				} else {
+					instance._internalVariables.setVariable();
+				}
+				
+			}
+		});
+	};
+	
+	this._internalVariables.defineProperty ("acceptOnlyFilesTypes", true); // e.g: "image/*", "video/*", "text/html", ".csv", "application/vnd.ms-excel"
+	this._internalVariables.defineProperty ("showUploadedFiles", true);
+	this._internalVariables.defineProperty ("disabled", true);
+	this._internalVariables.defineProperty ("enableDropFiles", true);
+	this._internalVariables.defineProperty ("enableCancelButton", true);
+	this._internalVariables.defineProperty ("enableDeleteButton", true);
+	this._internalVariables.defineProperty ("maxFiles", true);
+	this._internalVariables.defineProperty ("progressAnimationType", true);
+	this._internalVariables.defineProperty ("maxFileChars", true);
+	this._internalVariables.defineProperty ("uploadedFiles", true);
+	this._internalVariables.defineProperty ("rtl", true);
+	this._internalVariables.defineProperty ("height", true);
+	this._internalVariables.defineProperty ("showFocusRect", true);
+	this._internalVariables.defineProperty ("uploadedFileHtml", true);
+	this._internalVariables.defineProperty ("uploadedFileTemplate", true);
+	this._internalVariables.defineProperty ("browseText", false);
+	this._internalVariables.defineProperty ("browseTextDropDisabled", false);
+	this._internalVariables.defineProperty ("dropFilesText", false);
+	this._internalVariables.defineProperty ("uploadingFileText", false);
+	this._internalVariables.defineProperty ("uploadingFileTextProgressBar", false);
+	this._internalVariables.defineProperty ("uploadingFilesText", false);
+	this._internalVariables.defineProperty ("uploadingFilesTextProgressBar", false);
+	this._internalVariables.defineProperty ("uploadingFileByFileText", false);
+	this._internalVariables.defineProperty ("cancelText", false);
+
+	Object.defineProperty(this, 'serverScripts', {
+	    get: function() {
+	        return _variables.serverScripts;
+	    },
+	    set: function(value) {
+	    	var curServerScripts = this.serverScripts;
+	    	noJquery.extend(curServerScripts, value);
+	    	_variables.serverScripts = curServerScripts;
+	    }
+	});
+	Object.defineProperty(this, 'isUploading', {
+	    get: function() {
+			if (this._internalVariables != null) {
+				return this._internalVariables.isUploading;
+			}
+	        return false;
+	    }
+	});
+	
+	/*
 	
 	Object.defineProperty(this, 'acceptOnlyFilesTypes', { // e.g: "image/*", "video/*", "text/html", ".csv", "application/vnd.ms-excel"
 	    get: function() {
@@ -174,7 +242,6 @@ function SlashUploader (element, opts) {
 	        this._internalVariables.setVariable("uploadedFiles");
 	    }
 	});
-
 	Object.defineProperty(this, 'browseText', {
 	    get: function() {
 	        return _variables.browseText;
@@ -283,6 +350,15 @@ function SlashUploader (element, opts) {
 	        this._internalVariables.setVariable("uploadedFileHtml");
 	    }
 	});
+	Object.defineProperty(this, 'uploadedFileTemplate', {
+	    get: function() {
+	        return _variables.uploadedFileTemplate;
+	    },
+	    set: function(value) {
+	        _variables.uploadedFileTemplate = value;
+	        this._internalVariables.setVariable("uploadedFileTemplate");
+	    }
+	});
 	Object.defineProperty(this, 'cancelText', {
 	    get: function() {
 	        return _variables.cancelText;
@@ -292,25 +368,8 @@ function SlashUploader (element, opts) {
 	        this._internalVariables.setVariable();
 	    }
 	});
-	Object.defineProperty(this, 'serverScripts', {
-	    get: function() {
-	        return _variables.serverScripts;
-	    },
-	    set: function(value) {
-	    	var curServerScripts = this.serverScripts;
-	    	noJquery.extend(curServerScripts, value);
-	    	_variables.serverScripts = curServerScripts;
-	    }
-	});
-	Object.defineProperty(this, 'isUploading', {
-	    get: function() {
-			if (this._internalVariables != null) {
-				return this._internalVariables.isUploading;
-			}
-	        return false;
-	    }
-	});
-
+	*/
+	
 
 	this.onFilesSelected = null;
 	this.onFilesUploaded = null;
@@ -338,11 +397,12 @@ function SlashUploader (element, opts) {
 		fileUrlVariableName: "file_path",
 		errorVariableName: "error"
 	};
-
-
+	
 	_variables.showUploadedFiles = true;
 	_variables.disabled = false;
 	_variables.enableDropFiles = true;
+	_variables.enableCancelButton = true;
+	_variables.enableDeleteButton = true;
 	_variables.maxFiles = 9999;
 	_variables.progressAnimationType = "inline";
 	_variables.height = 80;
@@ -358,10 +418,11 @@ function SlashUploader (element, opts) {
 	_variables.uploadingFilesTextProgressBar = "Uploading {{total_files}} files";
 	_variables.uploadingFileByFileText = "Uploading \"{{current_file_name}}\" ({{current_file_index}}/{{total_files}})";
 	_variables.uploadedFileHtml = "<a href='{{current_file_path}}' target='_blank'>{{current_file_name}}</a>";
+	_variables.uploadedFileTemplate = null;
 	_variables.cancelText = "Cancel";
 
     this.elements = {};
-	this.elements.elementId = "uploader_"+Math.floor(Math.random()*999999999);
+	this.elements.elementId = "SlashUploader_"+Math.floor(Math.random()*999999999);
 	this.elements.containerElement = element;
     this.elements.uploaderDropAreaElement = null;
     this.elements.uploaderTextElement = null;
@@ -370,7 +431,8 @@ function SlashUploader (element, opts) {
     this.elements.uploaderDropAreaMiddleLayerElement = null;
     this.elements.uploaderResultWrapperElement = null;
     this.elements.uploaderResultElement = null;
-    this.elements.uploaderProgressContainerElement = null;
+	this.elements.uploaderProgressContainerElement = null;
+	this.elements.uploaderProgressBrElement = null;
     this.elements.uploaderProgressBarElement = null;
     this.elements.uploaderProgressBarPaddingElement = null;
 	this.elements.uploaderProgressBarTextElement = null;
@@ -404,6 +466,12 @@ function SlashUploader (element, opts) {
 			if (prevVars.enableDropFiles != instance.enableDropFiles) {
 	        	instance._internalVariables.setVariable("enableDropFiles");
 			}
+			if (prevVars.enableCancelButton != instance.enableCancelButton) {
+	        	instance._internalVariables.setVariable("enableCancelButton");
+			}
+			if (prevVars.enableDeleteButton != instance.enableDeleteButton) {
+	        	instance._internalVariables.setVariable("enableDeleteButton");
+			}
 			if (prevVars.maxFiles != instance.maxFiles) {
 	        	instance._internalVariables.setVariable("maxFiles");
 			}
@@ -427,7 +495,9 @@ function SlashUploader (element, opts) {
 	        prevVars.acceptOnlyFilesTypes = instance.acceptOnlyFilesTypes;
 	        prevVars.showUploadedFiles = instance.showUploadedFiles;
 	        prevVars.disabled = instance.disabled;
-	        prevVars.enableDropFiles = instance.enableDropFiles;
+			prevVars.enableDropFiles = instance.enableDropFiles;
+			prevVars.enableCancelButton = instance.enableCancelButton;
+			prevVars.enableDeleteButton = instance.enableDeleteButton;
 	        prevVars.maxFiles = instance.maxFiles;
 	        prevVars.progressAnimationType = instance.progressAnimationType;
 	        prevVars.maxFileChars = instance.maxFileChars;
@@ -477,101 +547,96 @@ function SlashUploader (element, opts) {
 
 			var curElementToTest = instance.elements.containerElement;
 			var curElementToTestTag = curElementToTest.tagName.toUpperCase();
-			var containedInForm = false;
-			while (curElementToTestTag != "BODY" && !containedInForm) {
-				curElementToTest = curElementToTest.parentElement;
-				curElementToTestTag = curElementToTest.tagName.toUpperCase();
-				if (curElementToTestTag == "FORM") {
-					containedInForm = true;
-				}
-			}
-			if (!containedInForm) {
+			
+			var formHtml = '<form id="'+instance.elements.elementId+'_form" name="'+instance.elements.elementId+'_form" class="slash_uploader_form"></form>';
+			noJquery(formHtml).appendTo("body");
 
-				var html = '<form id="'+instance.elements.elementId+'" name="'+instance.elements.elementId+'" class="uploader_form">';
-			    if (!instance.customHTML) {
-				    html += '<div class="uploader_div">';
-				    html += '	<div class="uploader_drop_area_wrapper">';
-				    html += '		<div class="uploader_drop_area_bottom_bg"></div>';
-				    html += '		<div class="uploader_drop_area_bottom"><img /></div>';
-				    html += '		<div class="uploader_drop_area_middle"><img /></div>';
-				    html += '		<div class="uploader_drop_area">';
-				    html += '			<div class="uploader_text"><span><div class="uploader_spinner"></div><span></span></span></div>';
-				    html += '			<div class="uploader_cancel"><span></span></div>';
-				    html += '		</div>';
-				    html += '	</div>';
-				    html += '	<div class="uploader_result_wrapper"><div class="uploader_result"></div></div>';
-				    html += '</div>';
-			    	html += '<div class="uploader_progress_container" style="display: none;">';
-			    	html += '	<table><tr>';
-			    	html += '		<td class="uploader_progress_bar_loading"><div class="uploader_spinner"></div><span></span></td>';
-			    	html += '		<td class="uploader_progress_bar_loading_padding"></td>';
-			    	html += '		<td class="uploader_progress_bar"><div><div></div></div></td>';
-			    	html += '		<td class="uploader_progress_bar_padding"></td>';
-			    	html += '		<td class="uploader_progress_bar_text"></td>';
-			    	html += '	</tr></table>';
-			    	html += '</div>';
-			    } else {
-			    	html += '<div class="uploader_drop_area_custom">';
-			    	html += '</div>';
-			    }
-			    html += '</form>';
-
-				if (!instance.customHTML) {
-					noJquery(instance.elements.containerElement).html (html);
-				} else {
-					noJquery(instance.elements.containerElement).css("position", "relative");
-					noJquery(instance.elements.containerElement).html(html+noJquery(instance.elements.containerElement).html());
-				}
-				noJquery(instance.elements.containerElement).addClass("slash_uploader");
-
-				//if (
-				//	instance.customHTML
-				//	|| (IEVersion >= 0 && IEVersion <= 8)
-				//	) {
-					noJquery(instance.elements.containerElement).on("mousemove", function(event) {
-						var element = this;
-						if (noJquery(this).find(".uploader_drop_area_wrapper")[0] != null) {
-							element = noJquery(this).find(".uploader_drop_area_wrapper")[0];
-						}
-						noJquery(instance.elements.uploaderDropAreaElement).find("input").css("left", event.pageX-noJquery(element).offset().left-120);
-						noJquery(instance.elements.uploaderDropAreaElement).find("input").css("top", event.pageY-noJquery(element).offset().top-20);
-					});
-				//}
-				
-			    if (!instance.customHTML) {
-					instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").get(0);
-				} else {
-					instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_custom").get(0);
-				}
-				instance.elements.uploaderTextElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").find(".uploader_text span").get(0);
-				instance.elements.uploaderDropAreaWrapper = noJquery(instance.elements.containerElement).find(".uploader_drop_area_wrapper").get(0);
-				instance.elements.uploaderDropAreaBottomLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_bottom").get(0);
-				instance.elements.uploaderDropAreaMiddleLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_middle").get(0);
-				instance.elements.uploaderResultElement = noJquery(instance.elements.containerElement).find(".uploader_result").get(0);
-				instance.elements.uploaderResultWrapperElement = noJquery(instance.elements.containerElement).find(".uploader_result_wrapper").get(0);
-				instance.elements.uploaderProgressContainerElement = noJquery(instance.elements.containerElement).find(".uploader_progress_container").get(0);
-				instance.elements.uploaderProgressBarElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar").get(0);
-				instance.elements.uploaderProgressBarPaddingElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar_padding").get(0);
-				instance.elements.uploaderProgressBarTextElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar_text").get(0);
-				instance.elements.uploaderProgressBarColorElement = noJquery(instance.elements.containerElement).find(".uploader_progress_container .uploader_progress_bar div div").get(0);
-				instance.elements.uploaderCancelButton = noJquery(instance.elements.containerElement).find(".uploader_cancel").get(0);
-				
-
-				instance._internalVariables.buildFileInput ();
-				instance._internalVariables.setProgressDisplay();
-				instance._internalVariables.setShowFocusRect();
-				instance._internalVariables.setText();
-				instance._internalVariables.setDocumentEvents();
-				instance._internalVariables.setDropFileEvents();
-				instance._internalVariables.showCurrentFiles();
-				noJquery(instance.elements.uploaderCancelButton).on("click", function () {
-					instance.cancelUpload();
-				});
-				instance._internalVariables.validateIframeGatewayPath();
-				
+			var html = "";
+			html += '<span id="'+instance.elements.elementId+'" name="'+instance.elements.elementId+'" class="uploader_container">';
+			if (!instance.customHTML) {
+				html += '<div class="uploader_div">';
+				html += '	<div class="uploader_drop_area_wrapper">';
+				html += '		<div class="uploader_drop_area_bottom_bg"></div>';
+				html += '		<div class="uploader_drop_area_bottom"><img /></div>';
+				html += '		<div class="uploader_drop_area_middle"><img /></div>';
+				html += '		<div class="uploader_drop_area">';
+				html += '			<div class="uploader_text"><span><div class="uploader_spinner"></div><span></span></span></div>';
+				html += '			<div class="uploader_cancel"><span></span></div>';
+				html += '		</div>';
+				html += '	</div>';
+				html += '	<div class="uploader_result_wrapper"><div class="uploader_result"></div></div>';
+				html += '	<br style="clear: both;" />';
+				html += '</div>';
+				html += '<div class="uploader_progress_container" style="display: none;">';
+				html += '	<table><tr>';
+				html += '		<td class="uploader_progress_bar_loading"><div class="uploader_spinner"></div><span></span></td>';
+				html += '		<td class="uploader_progress_bar_loading_padding"></td>';
+				html += '		<td class="uploader_progress_bar"><div><div></div></div></td>';
+				html += '		<td class="uploader_progress_bar_padding"></td>';
+				html += '		<td class="uploader_progress_bar_text"></td>';
+				html += '	</tr></table>';
+				html += '</div>';
+				html += '<br style="clear: both;" class="uploader_progress_br" />';
 			} else {
-				instance._internalVariables.consoleError("Can't create element inside 'form' tag.");
+				html += '<div class="uploader_drop_area_custom">';
+				html += '</div>';
 			}
+			html += '</span>';
+			
+			if (!instance.customHTML) {
+				noJquery(instance.elements.containerElement).html (html);
+			} else {
+				noJquery(instance.elements.containerElement).css("position", "relative");
+				noJquery(instance.elements.containerElement).html(html+noJquery(instance.elements.containerElement).html());
+			}
+			noJquery(instance.elements.containerElement).addClass("slash_uploader");
+
+			//if (
+			//	instance.customHTML
+			//	|| (IEVersion >= 0 && IEVersion <= 8)
+			//	) {
+				noJquery(instance.elements.containerElement).on("mousemove", function(event) {
+					var element = this;
+					if (noJquery(this).find(".uploader_drop_area_wrapper")[0] != null) {
+						element = noJquery(this).find(".uploader_drop_area_wrapper")[0];
+					}
+					noJquery(instance.elements.uploaderDropAreaElement).find("input").css("left", event.pageX-noJquery(element).offset().left-120);
+					noJquery(instance.elements.uploaderDropAreaElement).find("input").css("top", event.pageY-noJquery(element).offset().top-20);
+				});
+			//}
+			
+			if (!instance.customHTML) {
+				instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").get(0);
+			} else {
+				instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_custom").get(0);
+			}
+			instance.elements.uploaderTextElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").find(".uploader_text span").get(0);
+			instance.elements.uploaderDropAreaWrapper = noJquery(instance.elements.containerElement).find(".uploader_drop_area_wrapper").get(0);
+			instance.elements.uploaderDropAreaBottomLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_bottom").get(0);
+			instance.elements.uploaderDropAreaMiddleLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_middle").get(0);
+			instance.elements.uploaderResultElement = noJquery(instance.elements.containerElement).find(".uploader_result").get(0);
+			instance.elements.uploaderResultWrapperElement = noJquery(instance.elements.containerElement).find(".uploader_result_wrapper").get(0);
+			instance.elements.uploaderProgressContainerElement = noJquery(instance.elements.containerElement).find(".uploader_progress_container").get(0);
+			instance.elements.uploaderProgressBrElement = noJquery(instance.elements.containerElement).find(".uploader_progress_br").get(0);
+			instance.elements.uploaderProgressBarElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar").get(0);
+			instance.elements.uploaderProgressBarPaddingElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar_padding").get(0);
+			instance.elements.uploaderProgressBarTextElement = noJquery(instance.elements.containerElement).find(".uploader_progress_bar_text").get(0);
+			instance.elements.uploaderProgressBarColorElement = noJquery(instance.elements.containerElement).find(".uploader_progress_container .uploader_progress_bar div div").get(0);
+			instance.elements.uploaderCancelButton = noJquery(instance.elements.containerElement).find(".uploader_cancel").get(0);
+			
+
+			instance._internalVariables.buildFileInput ();
+			instance._internalVariables.setProgressDisplay();
+			instance._internalVariables.setShowFocusRect();
+			instance._internalVariables.setText();
+			instance._internalVariables.setDocumentEvents();
+			instance._internalVariables.setDropFileEvents();
+			instance._internalVariables.showCurrentFiles();
+			noJquery(instance.elements.uploaderCancelButton).on("click", function () {
+				instance.cancelUpload();
+			});
+			instance._internalVariables.validateIframeGatewayPath();
+				
 			
 		} else {
 			instance._internalVariables.consoleError("Element not exist in DOM.");
@@ -613,11 +678,13 @@ function SlashUploader (element, opts) {
 		        noJquery(instance.elements.containerElement).addClass("loading_bar");
 		        if (instance._internalVariables.isUploading && instance.elements.uploaderProgressContainerElement != null) {
 		        	noJquery(instance.elements.uploaderProgressContainerElement).css("display", "");
-		        }
+		        	noJquery(instance.elements.uploaderProgressBrElement).css("display", "");
+				}
 		    } else {
 		    	noJquery(instance.elements.containerElement).removeClass("loading_bar");
 		        if (instance.elements.uploaderProgressContainerElement != null) {
 			    	noJquery(instance.elements.uploaderProgressContainerElement).css("display", "none");
+		        	noJquery(instance.elements.uploaderProgressBrElement).css("display", "none");
 			    }
 		    }
 
@@ -645,7 +712,7 @@ function SlashUploader (element, opts) {
     		var fileData = instance._internalVariables.curUploadingFilesData[i];
     		var fileName = fileData.name;
     		var fileExtension = fileData.extension;
-    		var fileSize = fileData.size/1024;
+    		var fileSize = fileData.size;
     		
     		if(instance.allowedFilesExtensions != null && instance.allowedFilesExtensions.length > 0 && noJquery.inArray(fileExtension.toLowerCase(), instance.allowedFilesExtensions) == -1){
     			errors.push({error: 'invalid_file_extension', file: fileData});
@@ -676,7 +743,7 @@ function SlashUploader (element, opts) {
 	    
 		var instance = this.instance;
 		noJquery(instance.elements.uploaderDropAreaElement).find(".input_wrapper").remove();
-		noJquery(instance.elements.uploaderDropAreaElement).append( noJquery("<div class='input_wrapper'><input name='"+instance.elements.elementId+"_input' type='file' "+((instance.maxFiles > 1) ? "multiple" : "")+" /></div>")[0] );
+		noJquery(instance.elements.uploaderDropAreaElement).append( noJquery("<div class='input_wrapper'><input id='"+instance.elements.elementId+"_input' name='"+instance.elements.elementId+"_input' type='file' "+((instance.maxFiles > 1) ? "multiple" : "")+" /></div>")[0] );
 
 	    var filesUpload = noJquery(instance.elements.containerElement).find("input")[0];
 	    if (filesUpload != null) {
@@ -754,6 +821,7 @@ function SlashUploader (element, opts) {
         instance._internalVariables.setText();
 		instance._internalVariables.buildFileInput ();
 		noJquery(instance.elements.uploaderProgressContainerElement).css("display", "none");
+		noJquery(instance.elements.uploaderProgressBrElement).css("display", "none");
 		noJquery(instance.elements.uploaderProgressBarColorElement).css("width", "0%");
 		noJquery(instance.elements.uploaderCancelButton).css("display", "none");
 
@@ -973,7 +1041,7 @@ function SlashUploader (element, opts) {
 			noJquery(instance.elements.uploaderTextElement).find('span').html(curText);
 			noJquery(instance.elements.uploaderInputElement).attr('aria-label', curText);
 			noJquery(instance.elements.uploaderCancelButton).find('span').html(instance.cancelText);
-
+			
 		}
 
 	}
@@ -1025,6 +1093,19 @@ function SlashUploader (element, opts) {
 		return filenameName+filenameExt;
 
 	}
+
+	this._internalVariables.replaceFileDataParams = function (fileDataInstance, str) {
+
+		str = str
+			.split("{{rotation}}").join(fileDataInstance.rotation || "")
+			.split("{{size}}").join(fileDataInstance.size || "")
+			.split("{{duration}}").join(fileDataInstance.duration || "")
+			.split("{{width}}").join(fileDataInstance.width || "")
+			.split("{{height}}").join(fileDataInstance.height || "")
+			.split("{{extension}}").join(fileDataInstance.extension || "");
+		return str;
+
+	};
 
 	//
 	//
@@ -1130,41 +1211,44 @@ function SlashUploader (element, opts) {
 				instance._internalVariables.getFileMetaFinished (file, metadata);
 			}
 			
-		} else if (instance._internalVariables.isVideo(file.name) && instance.doGetFileMetadata) {
+		} else if (
+			(instance._internalVariables.isVideo(file.name) || instance._internalVariables.isAudio(file.name))
+			&& instance.doGetFileMetadata
+			) {
 
 			if (typeof(FileReader) != "undefined") {
 				
-				var video = document.createElement('video');
-				video.preload = 'metadata';
+				var mediaElement = document.createElement(instance._internalVariables.isVideo(file.name) ? 'video' : 'audio');
+				mediaElement.preload = 'metadata';
 				var metadataFailedTimeout = setTimeout(function () {
-					video.onloadedmetadata = null;
+					mediaElement.onloadedmetadata = null;
 					instance._internalVariables.consoleError("Failed retrieving meta data for '"+fileName+"'");
 					instance._internalVariables.getFileMetaFinished (file, metadata);
 				}, 400);
-				video.onloadedmetadata = function() {
+				mediaElement.onloadedmetadata = function() {
 					clearTimeout(metadataFailedTimeout);
-					window.URL.revokeObjectURL(video.src);
+					window.URL.revokeObjectURL(mediaElement.src);
 					var height = null;
 					var width = null;
-					if (video.width != null && video.width > 0) {
-						width = video.width;
+					if (mediaElement.width != null && mediaElement.width > 0) {
+						width = mediaElement.width;
 					}
-					if (video.videoWidth != null && video.videoWidth > 0) {
-						width = video.videoWidth;
+					if (mediaElement.videoWidth != null && mediaElement.videoWidth > 0) {
+						width = mediaElement.videoWidth;
 					}
-					if (video.height != null && video.height > 0) {
-						height = video.height;
+					if (mediaElement.height != null && mediaElement.height > 0) {
+						height = mediaElement.height;
 					}
-					if (video.videoHeight != null && video.videoHeight > 0) {
-						height = video.videoHeight;
+					if (mediaElement.videoHeight != null && mediaElement.videoHeight > 0) {
+						height = mediaElement.videoHeight;
 					}
-			        metadata.duration = video.duration;
+			        metadata.duration = mediaElement.duration;
 			        metadata.width = width;
 			        metadata.height = height;
 	  				instance._internalVariables.getFileMetaFinished (file, metadata);
 				}
 
-				video.src = URL.createObjectURL(file);
+				mediaElement.src = URL.createObjectURL(file);
 
 			} else {
 				instance._internalVariables.consoleError("Can't get file meta data since browser doesn't support FileReader");
@@ -1225,6 +1309,7 @@ function SlashUploader (element, opts) {
 
 		if (instance.progressAnimationType.indexOf("bar") != -1) {
 			noJquery(instance.elements.uploaderProgressContainerElement).css("display", "");
+			noJquery(instance.elements.uploaderProgressBrElement).css("display", "");
 		}
 		if (instance._internalVariables.getUploadType() == "iframe") {
 			noJquery(instance.elements.uploaderProgressBarElement).find("div").css("display", "none");
@@ -1250,7 +1335,8 @@ function SlashUploader (element, opts) {
 		noJquery(instance.elements.uploaderProgressBarTextElement).html(text);
 		
 		instance._internalVariables.isUploading = true;
-		noJquery(instance.elements.uploaderCancelButton).css("display", "block");
+
+		instance._internalVariables.setCancelButtonDisplay();
 		instance._internalVariables.setProgressDisplay();
 	    noJquery(instance.elements.containerElement).find("input").attr("onclick", "return false;");
 
@@ -1307,7 +1393,7 @@ function SlashUploader (element, opts) {
 		        var fileData = instance._internalVariables.curUploadingFilesData[fileIndex];
 		        var fileName = fileData.name;
 				var xhr = new XMLHttpRequest();
-				instance._internalVariables.uploadFileChunkXhr = xhr;
+				instance._internalVariables.uploadXhr = xhr;
 				xhr.upload.addEventListener("progress", function (evt) {
 					if (evt.lengthComputable) {
 						instance._internalVariables.onFileProgress (evt.loaded / evt.total);
@@ -1351,7 +1437,7 @@ function SlashUploader (element, opts) {
 
 						instance._internalVariables.consoleError(err);
 						instance._internalVariables.setError('parse_failed', files[fileIndex], result);
-			        	instance._internalVariables.uploadFileChunkXhr = null;
+			        	instance._internalVariables.uploadXhr = null;
 
 					}
 					
@@ -1359,7 +1445,9 @@ function SlashUploader (element, opts) {
 				}, false);
 
 				script = instance.serverScripts.uploadStream;
-				script = script.split("{{file_name}}").join(fileName).split("{{rotation}}").join(fileData.rotation);
+				script = script.split("{{file_name}}").join(fileName);
+				script = instance._internalVariables.replaceFileDataParams(fileData, script);
+				//.split("{{rotation}}").join(fileData.rotation);
 				script += "&_="+Math.random();
 
 				xhr.open("post", script, true);
@@ -1373,15 +1461,36 @@ function SlashUploader (element, opts) {
 			} else {
 
 				var roation = "";
+				var size = "";
+				var duration = "";
+				var width = "";
+				var height = "";
+				var extension = "";
 				for (var i=0; i<instance._internalVariables.curUploadingFilesData.length; i++) {
-					roation += instance._internalVariables.curUploadingFilesData[i].rotation;
+					roation += instance._internalVariables.curUploadingFilesData[i].rotation || "";
+					size += instance._internalVariables.curUploadingFilesData[i].size || "";
+					duration += instance._internalVariables.curUploadingFilesData[i].duration || "";
+					width += instance._internalVariables.curUploadingFilesData[i].width || "";
+					height += instance._internalVariables.curUploadingFilesData[i].height || "";
+					extension += instance._internalVariables.curUploadingFilesData[i].extension || "";
 					if (i < instance._internalVariables.curUploadingFilesData.length-1) {
 						roation += ",";
+						size += ",";
+						duration += ",";
+						width += ",";
+						height += ",";
+						extension += ",";
 					}
 				}
 
 				script = instance.serverScripts.uploadThroughIframe;
-				script = script.split("{{rotation}}").join(roation);
+				script = script
+					.split("{{rotation}}").join(roation)
+					.split("{{size}}").join(size)
+					.split("{{duration}}").join(duration)
+					.split("{{width}}").join(width)
+					.split("{{height}}").join(height)
+					.split("{{extension}}").join(extension);
 				//script += "&_="+Math.random();
 
 				instance._internalVariables.onFileProgress (0);
@@ -1413,6 +1522,18 @@ function SlashUploader (element, opts) {
 		
 	}
 
+	this._internalVariables.setCancelButtonDisplay = function () {
+		
+		var instance = this.instance;
+		//noJquery(instance.elements.uploaderCancelButton).css("display", "block");
+		if (instance.enableCancelButton && instance._internalVariables.isUploading) {
+			noJquery(instance.elements.uploaderCancelButton).css("display", "block");
+		} else {
+			noJquery(instance.elements.uploaderCancelButton).css("display", "none");
+		}
+
+	}
+
 	this._internalVariables.uploadFileChunk = function (script, file, uploaderId, blob, index, start, end) {
 
 		var instance = this.instance;
@@ -1427,7 +1548,7 @@ function SlashUploader (element, opts) {
 	    }
 
         var xhr = new XMLHttpRequest();
-        instance._internalVariables.uploadFileChunkXhr = xhr;
+        instance._internalVariables.uploadXhr = xhr;
         xhr.onload = function () {
         };
 		xhr.onerror = function () {
@@ -1474,7 +1595,7 @@ function SlashUploader (element, opts) {
 							instance._internalVariables.onFileProgress (index/count);
 						}
 			            if (index == count) {
-							instance._internalVariables.uploadFileChunkXhr = null;
+							instance._internalVariables.uploadXhr = null;
 			            	instance._internalVariables.uploadFileInChunksComplete(file, uploaderId);
 			            } else {
 					        start = end;
@@ -1504,9 +1625,11 @@ function SlashUploader (element, opts) {
 	this._internalVariables.uploadFileInChunksComplete = function (file, uploaderId) {
 
 		var instance = this.instance;
-		var script = instance.serverScripts.combineChunks.split("{{file_name}}").join(file.name).split("{{request_id}}").join(uploaderId).split("{{rotation}}").join(file.rotation);
+		var script = instance.serverScripts.combineChunks.split("{{file_name}}").join(file.name).split("{{request_id}}").join(uploaderId);
+		script = instance._internalVariables.replaceFileDataParams(file, script);
+		//.split("{{rotation}}").join(file.rotation);
 
-		instance._internalVariables.uploadFileChunkXhr = noJquery.ajax ({
+		instance._internalVariables.uploadXhr = noJquery.ajax ({
 			url: script,
 			dataType: 'jsonp',
 			success: function(data) {
@@ -1517,14 +1640,14 @@ function SlashUploader (element, opts) {
 	            if (!isLastFile && instance._internalVariables.curUploadingFilesData.length > 0) {
 	                instance._internalVariables.uploadFile ();
 	            }
-	        	instance._internalVariables.uploadFileChunkXhr = null;
+	        	instance._internalVariables.uploadXhr = null;
 			},
 			error: function(jqXHR, exception) {
 				if (exception === 'abort') {
 				} else {
 					instance._internalVariables.setError('upload_failed', file);
 				}
-	        	instance._internalVariables.uploadFileChunkXhr = null;
+	        	instance._internalVariables.uploadXhr = null;
 			}
 		});
 
@@ -1551,6 +1674,7 @@ function SlashUploader (element, opts) {
 			noJquery(instance.elements.uploaderDropAreaBottomLayerElement).css("width", Math.ceil(progress*totalWidth)+"%");
 			noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).css("width", noJquery(instance.elements.uploaderDropAreaElement).outerWidth());
 		}
+		noJquery(instance.elements.containerElement).attr("data-file-progress", Math.ceil(progress*100));
 
 	}
 
@@ -1568,9 +1692,9 @@ function SlashUploader (element, opts) {
 
 		var instance = this.instance;
 		instance._internalVariables.curUploadingFilesData = [];
-		if (instance._internalVariables.uploadFileChunkXhr != null) {
-			instance._internalVariables.uploadFileChunkXhr.abort();
-			instance._internalVariables.uploadFileChunkXhr = null;
+		if (instance._internalVariables.uploadXhr != null) {
+			instance._internalVariables.uploadXhr.abort();
+			instance._internalVariables.uploadXhr = null;
 		}
 		instance._internalVariables.isUploading = false;
 		instance._internalVariables.showUploadBtn();
@@ -1595,10 +1719,16 @@ function SlashUploader (element, opts) {
 
 			for (var i=0; i<result.length; i++) {
 				if (result[i][instance.serverScripts.fileNameVariableName] == null || result[i][instance.serverScripts.fileNameVariableName] == "") {
+					if (result[i][instance.serverScripts.errorVariableName] == null || result[i][instance.serverScripts.errorVariableName] == "") {
+						instance._internalVariables.consoleError ("Parameter '"+instance.serverScripts.fileNameVariableName+"' not found on returned JSON object");
+					}
 					instance._internalVariables.setError('upload_failed', file, result[i]);
 					hasError = true;
 					break;
 				} else {
+					result[i].file_name = result[i][instance.serverScripts.fileNameVariableName];
+					result[i].file_path = result[i][instance.serverScripts.fileUrlVariableName];
+					result[i].error = result[i][instance.serverScripts.errorVariableName];
 					instance.uploadedFiles.push (result[i]);
 				}
 			}
@@ -1606,9 +1736,15 @@ function SlashUploader (element, opts) {
 		} else if (typeof(result) == "object") {
 			
 			if (result[instance.serverScripts.fileNameVariableName] == null || result[instance.serverScripts.fileNameVariableName] == "") {
+				if (result[instance.serverScripts.errorVariableName] == null || result[instance.serverScripts.errorVariableName] == "") {
+					instance._internalVariables.consoleError ("Parameter '"+instance.serverScripts.fileNameVariableName+"' not found on returned JSON object");
+				}
 				instance._internalVariables.setError('upload_failed', file, result);
 				hasError = true;
 			} else {
+				result.file_name = result[instance.serverScripts.fileNameVariableName];
+				result.file_path = result[instance.serverScripts.fileUrlVariableName];
+				result.error = result[instance.serverScripts.errorVariableName];
 				instance.uploadedFiles.push (result);
 			}
 
@@ -1637,21 +1773,34 @@ function SlashUploader (element, opts) {
 		if (instance.elements.uploaderResultElement != null) {
 
 			clearTimeout(instance._internalVariables.displayErrorAnimationTimeoutDuration);
-			var deleteBtnStr = "<a class='uploader_delete_btn' data-index='{{index}}' href='javascript: void(0);'><div></div></a>";
+			var deleteBtnStr = "<a class='uploader_delete_btn' data-index='{{index}}' href='javascript: void(0);'><div></div></a>"+"&nbsp;";
+			if (!instance.enableDeleteButton) {
+				deleteBtnStr = "";
+			}
 		    if (instance.uploadedFiles == null || instance.uploadedFiles.length == 0) {
 		    	noJquery(instance.elements.uploaderResultElement).html("");
 		    } else {
 
 		    	var filesListHtml = "";
 		    	for (var i=0; i<instance.uploadedFiles.length; i++) {
-		    		var fileObj = instance.uploadedFiles[i];
-					if (fileObj[instance.serverScripts.fileNameVariableName] != null && fileObj[instance.serverScripts.fileNameVariableName] != "") {
-						var fileNameStr = instance.uploadedFileHtml;
-						if (typeof(fileNameStr) == "undefined") {
-							fileNameStr = "";
+					var fileObj = instance.uploadedFiles[i];
+					if (fileObj.file_name != null && fileObj.file_name != "") {
+						var fileNameStr = "";
+						if (typeof(instance.uploadedFileTemplate) == "function") {
+							
+							fileNameStr = instance.uploadedFileTemplate(fileObj);
+
+						} else {
+
+							fileNameStr = instance.uploadedFileHtml;
+							if (typeof(fileNameStr) == "undefined") {
+								fileNameStr = "";
+							}
+							fileNameStr = fileNameStr.split("{{current_file_path}}").join(fileObj.file_path).split("{{current_file_name}}").join(instance._internalVariables.getShortFilename(fileObj.file_name));
+
 						}
-						fileNameStr = fileNameStr.split("{{current_file_path}}").join(fileObj[instance.serverScripts.fileUrlVariableName]).split("{{current_file_name}}").join(instance._internalVariables.getShortFilename(fileObj[instance.serverScripts.fileNameVariableName]))
-						filesListHtml += "<div class='uploader_result_file'>"+deleteBtnStr.split("{{index}}").join(i)+"&nbsp;"+fileNameStr+"</div>";
+						
+						filesListHtml += "<div class='uploader_result_file'>"+deleteBtnStr.split("{{index}}").join(i)+fileNameStr+"</div>";
 			        }
 		    	}
 		    	noJquery(instance.elements.uploaderResultElement).html(filesListHtml);
@@ -1881,6 +2030,8 @@ function SlashUploader (element, opts) {
 
 	this._internalVariables.videoFileTypes = [".3gp2", ".3gpp", ".3gpp2", ".asf", ".asx", ".avi", ".flv", ".m4v", ".mkv", ".mov", ".mpeg", ".mpg", ".mpe", ".m1s", ".mpa", ".mp2", ".m2a", ".mp2v", ".m2v", ".m2s", ".mp4", ".ogg", ".rm", ".wmv", ".mp4", ".qt", ".ogm", ".vob", ".webm", ".787", ".ogv"];
 
+	this._internalVariables.audioFileTypes = [".3gp", ".act", ".aiff", ".aac", ".alac", ".amr", ".atrac", ".au", ".awb", ".dct", ".dss", ".dvf", ".flac", ".gsm", ".iklax", ".ivs", ".m4a", ".m4p", ".mmf", ".mp3", ".mpc", ".msv", ".ogg", ".opus", ".raw", ".tta", ".vox", ".wav", ".wma"];
+
 	this._internalVariables.imageFileTypes = [".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".gif"];
 
 	this._internalVariables.isFileType = function (file, curFileTypes) {
@@ -1903,6 +2054,13 @@ function SlashUploader (element, opts) {
 
 		var instance = this.instance;
 		return instance._internalVariables.isFileType (file, instance._internalVariables.videoFileTypes);
+
+	}
+
+	this._internalVariables.isAudio = function (file) {
+
+		var instance = this.instance;
+		return instance._internalVariables.isFileType (file, instance._internalVariables.audioFileTypes);
 
 	}
 
@@ -2045,7 +2203,7 @@ var uploaerIframeGateway = {
 	    iframeObj.actionCompletedFunc = onCompleted;
 	    uploaerIframeGateway.objs[requestId] = iframeObj;
 	    
-	    var iframeId = "uploader_gateway_iframe_"+formElementId;
+	    var iframeId = formElementId+'_gateway_iframe';
 	    if (noJquery("#"+iframeId).get(0) == null) {
 	    	var iframeElement = "<iframe id='"+iframeId+"' data-request='"+requestId+"' name='"+iframeId+"' style='width: 1px; height: 1px; opacity: 0; display: none;'>";
 	    	noJquery(iframeElement).appendTo('body');
@@ -2062,26 +2220,30 @@ var uploaerIframeGateway = {
 		formAction += "_="+Math.random();
 	    if (formAction.indexOf("//") == 0) {
 	    	formAction = window.location.protocol+formAction;
-	    }
-
-		noJquery('#'+formElementId)
+		}
+		
+		noJquery('#'+formElementId+'_form').html("");
+		var fileUploadElement = noJquery("#"+formElementId+"_input");
+		fileUploadElement.appendTo('#'+formElementId+'_form');
+		
+		noJquery('#'+formElementId+'_form')
 		.attr('action', formAction)
 		.attr('target', iframeId)
 		.attr('enctype', "multipart/form-data")
 		.attr('method', "post")
 	    .get(0).submit();
-
+		
 	},
 
 	cancelUpload: function (formElementId, scriptUrl) {
 		
-	    var iframeId = "uploader_gateway_iframe_"+formElementId;
+	    var iframeId = formElementId+'_gateway_iframe';
 	    var formAction = scriptUrl;
 	    if (noJquery("#"+iframeId).get(0) == null) {
 	    	var iframeElement = "<iframe id='"+iframeId+"' name='"+iframeId+"' style='width: 1px; height: 1px; opacity: 0; display: none;'>";
 	    	noJquery(iframeElement).appendTo('body');
 	    }
-		noJquery('#'+formElementId)
+		noJquery('#'+formElementId+'_form')
 		.attr('action', formAction)
 		.attr('target', iframeId)
 		.attr('enctype', "multipart/form-data")
