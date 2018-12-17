@@ -30,7 +30,7 @@
         else
         {
 
-            string Method = Request["method"];
+            string Method = Request[MethodParamName];
             if (Method == "combine_chunks") {
                 CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
             } else if (Method == "upload_chunk") {
@@ -49,6 +49,16 @@
 
 <script runat="server">
 
+    public static string MethodParamName = "method";
+    public static string RequestIdParamName = "request_id";
+    public static string ChunkIndexParamName = "chunk_index";
+    public static string IframeGatewayparamName = "iframe_gateway";
+    public static string FileNameParamName = "file_name";
+    public static string FileRotationParamName = "rotation";
+
+    public static string ReturnFileNameParamName = "file_name";
+    public static string ReturnFilePathParamName = "file_path";
+    public static string ReturnErrorParamName = "error";
     //
     //
     //  Endpoints
@@ -57,9 +67,9 @@
     public static void CombineChunks(string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
-        string Rotation = PageApp.Request["rotation"];
-        string FileName = PageApp.Request["file_name"];
-        string RequestId = PageApp.Request["request_id"];
+        string Rotation = PageApp.Request[FileRotationParamName];
+        string FileName = PageApp.Request[FileNameParamName];
+        string RequestId = PageApp.Request[RequestIdParamName];
         int RotationInt = 0;
         int.TryParse(Rotation, out RotationInt);
         NameValueCollection CombinedFile = CombineFileChunks (FileName, FileFolder, RequestId, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
@@ -70,9 +80,9 @@
     public static void UploadChunk(string FileFolder)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
-        string FileName = PageApp.Request["file_name"];
-        string RequestId = PageApp.Request["request_id"];
-        string ChunkIndex = PageApp.Request["chunk_index"];
+        string FileName = PageApp.Request[FileNameParamName];
+        string RequestId = PageApp.Request[RequestIdParamName];
+        string ChunkIndex = PageApp.Request[ChunkIndexParamName];
         string Folder = UploadFileChunk(FileName, FileFolder, RequestId, ChunkIndex);
         PageApp.Response.Write (GetJsonResponse(@"{""success"": ""1""}"));
     }
@@ -80,10 +90,10 @@
     public static void UploadThroughIframe (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
-        string Rotation = PageApp.Request["rotation"];
-        string FileName = PageApp.Request["file_name"];
-        string IframeGateway = PageApp.Request["iframe_gateway"];
-        string RequestId = PageApp.Request["request_id"];
+        string Rotation = PageApp.Request[FileRotationParamName];
+        string FileName = PageApp.Request[FileNameParamName];
+        string IframeGateway = PageApp.Request[IframeGatewayparamName];
+        string RequestId = PageApp.Request[RequestIdParamName];
         int RotationInt = 0;
         string FilesReturnStr = "";
         string[] Rotations = null;
@@ -112,8 +122,8 @@
     public void UploadStream (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
-        string Rotation = PageApp.Request["rotation"];
-        string FileName = PageApp.Request["file_name"];
+        string Rotation = PageApp.Request[FileRotationParamName];
+        string FileName = PageApp.Request[FileNameParamName];
         int RotationInt = 0;
         int.TryParse(Rotation, out RotationInt);
         NameValueCollection UploadedResult = SaveFileFromStreamData (FileName, FileFolder, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
@@ -124,7 +134,7 @@
     public static bool ValidateFilesTypes (String[] AllowedFilesTypes)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
-        string FileName = PageApp.Request["file_name"];
+        string FileName = PageApp.Request[FileNameParamName];
         bool FileTypeIsValid = true;
         if (!string.IsNullOrEmpty(FileName) && !IsFileTypeValid (FileName, AllowedFilesTypes))
         {
@@ -185,9 +195,9 @@
     public static string GetFileJson (NameValueCollection FileObject) {
 
         string FileJson = @"{
-	""file_name"": """+FileObject["file_name"]+@""",
-	""file_path"": """+FileObject["file_path"]+@""",
-	""error"": """+FileObject["error"]+@"""
+	"""+ReturnFileNameParamName+@""": """+FileObject[ReturnFileNameParamName]+@""",
+	"""+ReturnFilePathParamName+@""": """+FileObject[ReturnFilePathParamName]+@""",
+	"""+ReturnErrorParamName+@""": """+FileObject[ReturnErrorParamName]+@"""
 	}";
         return FileJson;
 
@@ -258,13 +268,13 @@
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         NameValueCollection ErrorResult = new NameValueCollection();
-        ErrorResult["error"] = ParseJsonStringValue(ErrorString);
+        ErrorResult[ReturnErrorParamName] = ParseJsonStringValue(ErrorString);
         string ErrorJson = GetFileJson(ErrorResult);
-        string Method = PageApp.Request["method"];
+        string Method = PageApp.Request[MethodParamName];
         if (Method == "upload_through_iframe")
         {
-            string IframeGateway = PageApp.Request["iframe_gateway"];
-            string RequestId = PageApp.Request["request_id"];
+            string IframeGateway = PageApp.Request[IframeGatewayparamName];
+            string RequestId = PageApp.Request[RequestIdParamName];
             PageApp.Response.Write (GetIframeResponse(IframeGateway, RequestId, ErrorJson));
         } else
         {
@@ -322,8 +332,8 @@
         }
         Directory.Delete (PageApp.Server.MapPath(FileFolder+FolderName+"/"));
         NameValueCollection ReturnObj = new NameValueCollection();
-        ReturnObj["file_name"] = FileNameToSave;
-        ReturnObj["file_path"] = GetFileUrl (FileNameToSave, FileFolder);
+        ReturnObj[ReturnFileNameParamName] = FileNameToSave;
+        ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileNameToSave, FileFolder);
         return ReturnObj;
 
     }
@@ -354,7 +364,7 @@
         FileName = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
         byte[] FileData = PageApp.Request.BinaryRead(PageApp.Request.TotalBytes);
 
-        if (FileData.Length > 0)
+        if (FileData.Length >= 0)
         {
             /*
             string Extension = GetFileExtension(FileName).ToLower();
@@ -375,12 +385,17 @@
             }
             */
             File.WriteAllBytes(PageApp.Server.MapPath(FileFolder) + FileName, FileData);
+            string Extension = GetFileExtension(FileName).ToLower();
+            if ((Rotation != 0) && (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp"))
+            {
+                RotateImage(FileName, FileFolder, FileName, FileFolder, Rotation);
+            }
 
-            ReturnObj["file_name"] = FileName;
-            ReturnObj["file_path"] = GetFileUrl (FileName, FileFolder);
+            ReturnObj[ReturnFileNameParamName] = FileName;
+            ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileName, FileFolder);
 
         } else {
-            ReturnObj["error"] = "No stream data";
+            ReturnObj[ReturnErrorParamName] = "No stream data";
         }
 
         return ReturnObj;
@@ -405,11 +420,11 @@
             {
                 RotateImage(FileName, FileFolder, FileName, FileFolder, Rotation);
             }
-            ReturnObj["file_name"] = FileName;
-            ReturnObj["file_path"] = GetFileUrl (FileName, FileFolder);
+            ReturnObj[ReturnFileNameParamName] = FileName;
+            ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileName, FileFolder);
 
         }else{
-            ReturnObj["error"] = "File was not found";
+            ReturnObj[ReturnErrorParamName] = "File was not found";
         }
         return ReturnObj;
     }
