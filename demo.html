@@ -2,6 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,minimum-scale=1,maximum-scale=1,user-scalable=0">
 <title>SlashUploader Demos</title>
 <script src="./SlashUploader/SlashUploader.min.js"></script>
 <link rel="stylesheet" href="./SlashUploader/SlashUploader.min.css" type="text/css" />
@@ -16,6 +17,7 @@ var uploaderPreDefinedFiles;
 var uploaderProgressBar;
 var uploaderRtl;
 var uploaderNoDragDrop;
+var uploaderNoCancelDelete;
 var uploaderNoResults;
 var uploaderCrossDomain;
 var uploaderCrossDomainNoChuncks;
@@ -61,8 +63,8 @@ function buildUploaders () {
 
 	var onFileDeleted = function (deletedFile, files) {
 		console.log ("onFileDeleted", deletedFile, files);
-		var str = "<u>File deleted:</u><br>";
-		str += deletedFile.file_name+"<br><br>";
+		var str = "<u>deleted:</u> ";
+		str += deletedFile.file_name+"<br>";
 		str += "<u>Files remaining:</u><br>";
 		for (var i=0; i<files.length; i++) {
 			str += files[i].file_name+"<br>";
@@ -99,6 +101,7 @@ function buildUploaders () {
 	
 	uploaderDefault = new SlashUploader (document.getElementById("uploader_default"));
 
+	
 	uploaderSingleFile = new SlashUploader (document.getElementById("uploader_single_file"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
@@ -170,7 +173,7 @@ function buildUploaders () {
 	});
 	uploaderProgressBar.progressAnimationType = "inline|bar";
 
-
+	
 	uploaderRtl = new SlashUploader (document.getElementById("uploader_rtl"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
@@ -191,6 +194,13 @@ function buildUploaders () {
 	uploaderRtl.uploadingFilesTextProgressBar = "מעלה {{total_files}} קבצים...";
 	uploaderRtl.uploadingFileByFileText = "מעלה את הקובץ \"{{current_file_name}}\" (קובץ {{current_file_index}} מתוך {{total_files}})";
 	uploaderRtl.cancelText = "ביטול";
+	uploaderRtl.uploadedFileTemplate = function (fileData) {
+		if (fileData.file_name.toLowerCase().indexOf(".jpg") != -1 || fileData.file_name.toLowerCase().indexOf(".png") != -1) {
+			return "<img src='"+fileData.file_path+"' height='40' />"
+		} else {
+			return "<a style='direction: rtl; font-weight: bold;' href='"+fileData.file_path+"' target='_blank'>"+fileData.file_name+"</a>";
+		}
+	}
 	uploaderRtl.errors = {
 		invalidFileExtension: "סוג הקובץ לא נתמך",
 		invalidFileSize: "הקובץ כבד מדי",
@@ -199,6 +209,7 @@ function buildUploaders () {
 		uploadFailed: "העלאה נכשלה"
 	};
 
+	
 	uploaderNoDragDrop = new SlashUploader (document.getElementById("uploader_no_drag_drop"), {
 		onFilesSelected: onFilesSelected,
 		onFilesUploaded: onFilesUploaded,
@@ -208,6 +219,18 @@ function buildUploaders () {
 		onError: onError
 	});
 	uploaderNoDragDrop.enableDropFiles = false;
+
+
+	uploaderNoCancelDelete = new SlashUploader (document.getElementById("uploader_no_cancel_delete"), {
+		onFilesSelected: onFilesSelected,
+		onFilesUploaded: onFilesUploaded,
+		onFilesProgress: onFilesProgress,
+		onFileDeleted: onFileDeleted,
+		onCanceled: onCanceled,
+		onError: onError
+	});
+	uploaderNoCancelDelete.enableCancelButton = false;
+	uploaderNoCancelDelete.enableDeleteButton = false;
 
 
 	uploaderNoResults = new SlashUploader (document.getElementById("uploader_no_results"), {
@@ -223,9 +246,9 @@ function buildUploaders () {
 	
 	var crossDomainScripts = {
 		uploadChunk: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
-		combineChunks: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}",
-		uploadStream: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}",
-		uploadThroughIframe: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}"
+		combineChunks: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}",
+		uploadStream: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}",
+		uploadThroughIframe: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}"
 	};
 		
 	uploaderCrossDomain = new SlashUploader (document.getElementById("uploader_field_cross_domain"), {
@@ -333,6 +356,7 @@ html, body {
 }
 .uploader_status {
 	vertical-align: top;
+	font-size: 12px;
 }
 .custom_html {
 	width: 120px;
@@ -394,6 +418,15 @@ html, body {
 	background: green;
 }
 
+@media (max-width: 640px) {
+	.uploader_field {
+		width: 150px;
+	}
+}
+/*
+form {
+	width: 0; height: 0;
+}*/
 
 </style>
 
@@ -401,6 +434,7 @@ html, body {
 
 <body onload="init();">
 	
+	<form>
 	<table cellpadding='6'>
 		<tr>
 			<th class="title_th">
@@ -511,6 +545,17 @@ html, body {
 		</tr>
 		<tr>
 			<td>
+				Cancel & Delete disabled
+			</td>
+			<td class="uploader_field_container">
+				<div id="uploader_no_cancel_delete" class="uploader_field">
+				</div>
+			</td>
+			<td class="uploader_status">
+			</td>
+		</tr>
+		<tr>
+			<td>
 				Don't show uploaded files
 			</td>
 			<td class="uploader_field_container">
@@ -585,7 +630,7 @@ html, body {
 				Custom button
 			</td>
 			<td class="uploader_field_container">
-				<div id="uploader_field_custom_button" class="uploader_field custom_html">
+				<div id="uploader_field_custom_button" class="custom_html">
 					<div class="btn" style="padding: 20px;">
 						Upload it!
 					</div>
@@ -599,6 +644,7 @@ html, body {
 
 
 	</table>
-	
+	</form>
+
 </body>
 </html>
