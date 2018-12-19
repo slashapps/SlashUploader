@@ -487,6 +487,9 @@
 
         if (string.IsNullOrEmpty(FileName)) {
             FileName = GetGuid();
+        } else if (FileName.StartsWith(".") && FileName.Split('.').Length <= 2)
+        {
+            FileName = GetGuid() + FileName;
         }
         if (!DoOverwrite) {
             FileName = GetNonOverwrittenFileName (FileName, FileFolder, FilesNumberingType);
