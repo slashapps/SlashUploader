@@ -42,16 +42,20 @@
 	display: table-cell;
 	vertical-align: middle;
 }
+.slash_uploader .uploader_drop_area .uploader_text .uploader_text_container {
+	overflow: hidden;
+}
 .slash_uploader .uploader_container.rtl .uploader_drop_area .uploader_text {
 	direction: rtl;
 }
-.slash_uploader.uploading .uploader_drop_area .uploader_text span,
+.slash_uploader.uploading .uploader_drop_area .uploader_text .uploader_text_container,
 .slash_uploader .uploader_drop_area .uploader_cancel span {
 	background: white;
 	display: inline;
 	padding: 3px;
-  	box-shadow: 3px 0 0 white, -3px 0 0 white;
 	line-height: 21px;
+	box-shadow: 3px 0 0 white, -3px 0 0 white;
+	/*box-decoration-break: clone;*/
 }
 .slash_uploader .uploader_drop_area .uploader_cancel {
 	position: absolute;
@@ -162,7 +166,7 @@
 	outline-color: Highlight;
 }
 .slash_uploader .uploader_drop_area .uploader_spinner {
-	top: 4px; left: -3px;
+	top: 3px; left: -3px;
 }
 .slash_uploader .uploader_container.rtl .uploader_drop_area .uploader_spinner {
 	left: 3px;
@@ -194,7 +198,9 @@
 	font-family: Arial;
 	margin: 0; padding: 0;
 	cursor: pointer;
-	height: 100px; width: 200px;
+	/*height: 100px;*/
+	height: 40px;
+	width: 200px;
 	font-size: 0;
 	opacity: 0;
 	filter: alpha(opacity = 0);
@@ -227,6 +233,7 @@
 	height: 20px;
 	float: left;
 	width: 100%;
+	overflow: hidden;
 }
 .slash_uploader .uploader_progress_container>table {
 	width: 100%;
@@ -297,8 +304,8 @@
     position: relative;
     left: 0px;
     top: 0px;
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     border-radius:50%;
     display:inline-block;
     border: 2px solid #09F;
@@ -469,8 +476,30 @@
 		width: 100% !important;
 	}
 	.slash_uploader .uploader_result_wrapper {
-		padding-top: 5px;
 		height: auto !important;
-		width: calc(100% - 25px) !important;
+		width: calc(100% - 25px);
+		display: block;
+	}
+	.slash_uploader .uploader_result {
+		display: inline;
+	}
+	.slash_uploader .uploader_result_file:first-child {
+		padding-top: 5px;
+	}
+	.slash_uploader.uploading .uploader_drop_area .uploader_text .uploader_text_container,
+	.slash_uploader .uploader_drop_area .uploader_cancel span {
+		line-height: 14px;
+		font-size: 11px;
+	}
+	.slash_uploader .uploader_progress_bar_padding {
+		width: 1px;
+	}
+	.uploader_progress_bar_text {
+		font-size: 14px;
+	}
+	.slash_uploader .uploader_drop_area .uploader_spinner {
+		width: 12px;
+		height: 12px;
+		top: 4px;
 	}
 }

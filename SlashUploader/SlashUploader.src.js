@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.3
+ * SlashUploader - JS plugin - Version 1.5.4
  * Copyright (c) 2018 Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
  */
@@ -157,6 +157,16 @@ function SlashUploader (element, opts) {
 	    	var curServerScripts = this.serverScripts;
 	    	noJquery.extend(curServerScripts, value);
 	    	_variables.serverScripts = curServerScripts;
+	    }
+	});
+	Object.defineProperty(this, 'value', {
+	    get: function() {
+	        return _variables.uploadedFiles;
+	    },
+	    set: function(value) {
+			console.log (this);
+			_variables.uploadedFiles = value;
+			this._internalVariables.setVariable("uploadedFiles");
 	    }
 	});
 	Object.defineProperty(this, 'isUploading', {
@@ -560,7 +570,7 @@ function SlashUploader (element, opts) {
 				html += '		<div class="uploader_drop_area_bottom"><img /></div>';
 				html += '		<div class="uploader_drop_area_middle"><img /></div>';
 				html += '		<div class="uploader_drop_area">';
-				html += '			<div class="uploader_text"><span><div class="uploader_spinner"></div><span></span></span></div>';
+				html += '			<div class="uploader_text"><div class="uploader_text_container"><div class="uploader_spinner"></div><span></span></div></div>';
 				html += '			<div class="uploader_cancel"><span></span></div>';
 				html += '		</div>';
 				html += '	</div>';
@@ -610,7 +620,7 @@ function SlashUploader (element, opts) {
 			} else {
 				instance.elements.uploaderDropAreaElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_custom").get(0);
 			}
-			instance.elements.uploaderTextElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").find(".uploader_text span").get(0);
+			instance.elements.uploaderTextElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area").find(".uploader_text .uploader_text_container").get(0);
 			instance.elements.uploaderDropAreaWrapper = noJquery(instance.elements.containerElement).find(".uploader_drop_area_wrapper").get(0);
 			instance.elements.uploaderDropAreaBottomLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_bottom").get(0);
 			instance.elements.uploaderDropAreaMiddleLayerElement = noJquery(instance.elements.containerElement).find(".uploader_drop_area_middle").get(0);
@@ -665,6 +675,7 @@ function SlashUploader (element, opts) {
 		noJquery(instance.elements.uploaderDropAreaWrapper).css("height", curHeight+"px");
 		//noJquery(instance.elements.uploaderResultWrapperElement).css("min-height", curHeight+"px");
 		noJquery(instance.elements.uploaderResultWrapperElement).css("height", curHeight+"px");
+		noJquery(instance.elements.uploaderTextElement).css("max-height", (curHeight-15)+"px");
 	};
 
 	this._internalVariables.setProgressDisplay = function () {
@@ -786,14 +797,16 @@ function SlashUploader (element, opts) {
 	        	}, 1);
 	        }
 
-	        filesUpload.onmouseover = function () {
-	            instance._internalVariables.hoverOnBtn = true;
-	            instance._internalVariables.checkDragFileStates ();
-	        }
-	        filesUpload.onmouseout = function () {
-	            instance._internalVariables.hoverOnBtn = false;
-	            instance._internalVariables.checkDragFileStates ();
-	        }
+			if (!instance._internalVariables.isMobileOrTablet()) {
+				filesUpload.onmouseover = function () {
+					instance._internalVariables.hoverOnBtn = true;
+					instance._internalVariables.checkDragFileStates ();
+				}
+				filesUpload.onmouseout = function () {
+					instance._internalVariables.hoverOnBtn = false;
+					instance._internalVariables.checkDragFileStates ();
+				}
+			}
 
 	    }
 		instance.elements.uploaderInputElement = noJquery(instance.elements.containerElement).find("input")[0];
@@ -1016,26 +1029,20 @@ function SlashUploader (element, opts) {
 				
 				if (instance._internalVariables.draggedOnBtn) {
 					curText = instance.dropFilesText;
-					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
 				} else if (instance._internalVariables.draggedOnDocument) {
 					curText = instance.dropFilesText;
-					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance.dropFilesText);
 				} else if (instance._internalVariables.hoverOnBtn) {
 					curText = instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled;
-					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
 				} else {
 					curText = instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled;
-					//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
 				}
 				noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "none");
 
 			} else if (instance._internalVariables.isUploading) {
 				curText = instance._internalVariables.getUploadingText();
-        		//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.getUploadingText());
         		noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "");
 			} else {
 				curText = instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled;
-				//noJquery(instance.elements.uploaderTextElement).find('span').html(instance._internalVariables.isDropFilesEnabled() ? instance.browseText : instance.browseTextDropDisabled);
         		noJquery(instance.elements.uploaderTextElement).find('.uploader_spinner').css("display", "none");
 			}
 			noJquery(instance.elements.uploaderTextElement).find('span').html(curText);
@@ -1284,7 +1291,8 @@ function SlashUploader (element, opts) {
 				instance._internalVariables.uploadFile ();
 			} else {
 	    		instance._internalVariables.parseErrors(errors);
-	    	}
+			}
+			noJquery(instance.elements.containerElement).removeClass("focused");
 
 		} else {
 			instance._internalVariables.curUploadingFileIndex ++;
@@ -1311,6 +1319,8 @@ function SlashUploader (element, opts) {
 			noJquery(instance.elements.uploaderProgressContainerElement).css("display", "");
 			noJquery(instance.elements.uploaderProgressBrElement).css("display", "");
 		}
+
+		noJquery(instance.elements.uploaderProgressBarTextElement).css("display", "");
 		if (instance._internalVariables.getUploadType() == "iframe") {
 			noJquery(instance.elements.uploaderProgressBarElement).find("div").css("display", "none");
 			noJquery(instance.elements.uploaderProgressBarTextElement).css("width", "auto");
@@ -1319,7 +1329,11 @@ function SlashUploader (element, opts) {
 			noJquery(instance.elements.uploaderProgressBarElement).find("div").css("display", "");
 			noJquery(instance.elements.uploaderProgressBarTextElement).css("width", "1%");
 			noJquery(instance.elements.uploaderProgressBarPaddingElement).css("display", "");
+			if (instance._internalVariables.isMobileOrTablet()) {
+				noJquery(instance.elements.uploaderProgressBarTextElement).css("display", "none");
+			}
 		}
+
 		noJquery(instance.elements.uploaderResultElement).removeClass("error");
 		instance._internalVariables.showCurrentFiles();
 		var files = instance._internalVariables.curUploadingFilesData;
@@ -1452,7 +1466,7 @@ function SlashUploader (element, opts) {
 
 				xhr.open("post", script, true);
 				xhr.setRequestHeader("Content-Type", "multipart/form-data");
-				xhr.setRequestHeader("X-File-Name", fileName);
+				xhr.setRequestHeader("X-File-Name", encodeURIComponent(fileName));
 				//xhr.setRequestHeader("X-File-Size", fileData.size);
 				xhr.setRequestHeader("X-File-Type", fileData.type);
 				
@@ -1763,7 +1777,8 @@ function SlashUploader (element, opts) {
         	}
 	    	instance._internalVariables.showCurrentFiles();
 			instance._internalVariables.showUploadBtn();
-	    }
+
+		}
 		
 	}
 
