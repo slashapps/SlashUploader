@@ -2,7 +2,7 @@
 
 Javascript multi-features plugin to upload files - with cross-domain support, legacy browsers compatibility, fully-customizable design, and many more options.
 
-**To get started, check out https://slashuploader.com**
+**To get started, visit https://slashuploader.com**
 
 Check out some of our [demos](https://slashuploader.com#demos).
 
@@ -11,7 +11,7 @@ Check out some of our [demos](https://slashuploader.com#demos).
 
 The plugin contain the following features:
   * **Cross-Domain** - Upload files to a cross-domain script, on all browsers.
-  * **Old Browsers Support** - support very old browsers, such as IE8.
+  * **Old Browsers Support** - Support very old browsers, such as IE8.
   * **Preview Images** - See image preview within the plugin progress indication.
   * **Drag & Drop** - Select files by dragging them.
   * **Get Files Metadata** - Get files metadata upon files selection.

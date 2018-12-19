@@ -188,8 +188,8 @@ function buildUploaders () {
 	uploaderRtl.browseText = "הנח קבצים כאן או לחץ לבחירת קבצים";
 	uploaderRtl.browseTextDropDisabled = "לחץ לבחירת קובץ";
 	uploaderRtl.dropFilesText = "הנח קבצים כאן";
-	uploaderRtl.uploadingFileText = "מעלה את הקובץ \"{{current_file_name}}\"...";
-	uploaderRtl.uploadingFileTextProgressBar = "מעלה את הקובץ \"{{current_file_name}}\"...";
+	uploaderRtl.uploadingFileText = "מעלה את \"{{current_file_name}}\"...";
+	uploaderRtl.uploadingFileTextProgressBar = "מעלה את \"{{current_file_name}}\"...";
 	uploaderRtl.uploadingFilesText = "מעלה {{total_files}} קבצים...";
 	uploaderRtl.uploadingFilesTextProgressBar = "מעלה {{total_files}} קבצים...";
 	uploaderRtl.uploadingFileByFileText = "מעלה את הקובץ \"{{current_file_name}}\" (קובץ {{current_file_index}} מתוך {{total_files}})";
@@ -260,6 +260,7 @@ function buildUploaders () {
 		onError: onError
 	});
 	uploaderCrossDomain.serverScripts = crossDomainScripts;
+	uploaderCrossDomain.progressAnimationType = "inline|bar";
 	
 	uploaderCrossDomainNoChuncks = new SlashUploader (document.getElementById("uploader_field_cross_domain_no_chunks"), {
 		onFilesSelected: onFilesSelected,
@@ -271,6 +272,7 @@ function buildUploaders () {
 	});
 	uploaderCrossDomainNoChuncks.serverScripts = crossDomainScripts;
 	uploaderCrossDomainNoChuncks.uploadFileInChunks = false;
+	uploaderCrossDomainNoChuncks.progressAnimationType = "inline|bar";
 
 
 	uploaderWithValidations = new SlashUploader (document.getElementById("uploader_field_validations"), {
@@ -279,7 +281,8 @@ function buildUploaders () {
 		onFilesProgress: onFilesProgress,
 		onFileDeleted: onFileDeleted,
 		onCanceled: onCanceled,
-		onError: onError
+		onError: onError,
+		showFocusRect: true
 	});
 	uploaderWithValidations.allowedFilesExtensions = ["mp4", "mov", "avi", "ogv", "wmv", "flv", "mkv", "mpg", "webm"];
 	uploaderWithValidations.allowedMaxFileSize = 5000;
@@ -420,13 +423,22 @@ html, body {
 
 @media (max-width: 640px) {
 	.uploader_field {
-		width: 150px;
+		width: 100%;
+	/*	width: 150px;*/
+	}
+	.demos_table {
+		width: 100%;
+	}
+	.title_th {
+		width: 25px;
+	}
+	.uploader_th, .uploader_field_container {
+		max-width: 150px;
+	}
+	.status_th {
+		width: 55px;
 	}
 }
-/*
-form {
-	width: 0; height: 0;
-}*/
 
 </style>
 
@@ -435,7 +447,7 @@ form {
 <body onload="init();">
 	
 	<form>
-	<table cellpadding='6'>
+	<table class="demos_table" cellpadding='6'>
 		<tr>
 			<th class="title_th">
 			</th>
