@@ -4,54 +4,29 @@
 <%@ Import Namespace="System.Drawing.Drawing2D" %>
 <%@ Import Namespace="System.Security.AccessControl" %>
 <%@ Import Namespace="System.Security.Principal" %>
-
 <%
-    Response.AppendHeader("Access-Control-Allow-Origin", "*");
+Response.AppendHeader("Access-Control-Allow-Origin", "*");
 
-    string FileFolder = "./uploads/";
-    bool DoOverwriteFilename = false;
-    bool SaveFileWithGuidFilename = false;
-    String[] AllowedFilesTypes = {
-        "jpg", "png", "gif", "jpeg", "bmp", "tiff", // Images
-        "3gp2", "3gpp", "3gpp2", "asf", "asx", "avi", "flv", "m4v", "mkv", "mov", "mpeg", "mpg", "mpe", "m1s", "mpa", "mp2", "m2a", "mp2v", "m2v", "m2s", "mp4", "ogg", "rm", "wmv", "mp4", "qt", "ogm", "vob", "webm", "787", // Videos
-        "3gp", "act", "aiff", "aac", "alac", "amr", "atrac", "au", "awb", "dct", "dss", "dvf", "flac", "gsm", "iklax", "ivs", "m4a", "m4p", "mmf", "mp3", "mpc", "msv", "ogg", "opus", "raw", "tta", "vox", "wav", "wma", // Audios
-        "txt", // plain Text
-        "doc", "docb", "docm", "docx", "dot", "dotm", "dotx", "pdf", "pot", "potm", "potx", "ppam", "pps", "ppsx", "ppt", "pptm", "pptx", "sldm", "sldx", // Docs
-        "csv", "xla", "xlam", "xll", "xlm", "xls","xlsb", "xslm", "xlsx", "xlt", "xltm", "xltx", "xlw" // Excel
-    };
+string FileFolder = "./uploads/";
+bool DoOverwriteFilename = false;
+bool SaveFileWithGuidFilename = false;
+String[] AllowedFilesTypes = {
+    "jpg", "png", "gif", "jpeg", "bmp", "tiff", // Images
+    "3gp2", "3gpp", "3gpp2", "asf", "asx", "avi", "flv", "m4v", "mkv", "mov", "mpeg", "mpg", "mpe", "m1s", "mpa", "mp2", "m2a", "mp2v", "m2v", "m2s", "mp4", "ogg", "rm", "wmv", "mp4", "qt", "ogm", "vob", "webm", "787", // Videos
+    "3gp", "act", "aiff", "aac", "alac", "amr", "atrac", "au", "awb", "dct", "dss", "dvf", "flac", "gsm", "iklax", "ivs", "m4a", "m4p", "mmf", "mp3", "mpc", "msv", "ogg", "opus", "raw", "tta", "vox", "wav", "wma", // Audios
+    "txt", // plain Text
+    "doc", "docb", "docm", "docx", "dot", "dotm", "dotx", "pdf", "pot", "potm", "potx", "ppam", "pps", "ppsx", "ppt", "pptm", "pptx", "sldm", "sldx", // Docs
+    "csv", "xla", "xlam", "xll", "xlm", "xls","xlsb", "xslm", "xlsx", "xlt", "xltm", "xltx", "xlw" // Excel
+};
 
-    try {
-
-        string GeneralError = GetGeneralError(FileFolder, AllowedFilesTypes);
-        if (!string.IsNullOrEmpty(GeneralError))
-        {
-            ResponseError(GeneralError);
-        }
-        else
-        {
-
-            string Method = Request[MethodParamName];
-            if (Method == "combine_chunks") {
-                CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-            } else if (Method == "upload_chunk") {
-                UploadChunk(FileFolder);
-            } else if (Method == "upload_through_iframe") {
-                UploadThroughIframe(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-            } else if (Method == "upload_stream") {
-                UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-            }
-        }
-
-    } catch (Exception e) {
-        ResponseError(e);
-    }
+StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFilesTypes);
 %>
-
 <script runat="server">
 
     public static string MethodParamName = "method";
     public static string RequestIdParamName = "request_id";
     public static string ChunkIndexParamName = "chunk_index";
+    public static string TotalChunksParamName = "total_chunks";
     public static string IframeGatewayparamName = "iframe_gateway";
     public static string FileNameParamName = "file_name";
     public static string FileRotationParamName = "rotation";
@@ -59,6 +34,41 @@
     public static string ReturnFileNameParamName = "file_name";
     public static string ReturnFilePathParamName = "file_path";
     public static string ReturnErrorParamName = "error";
+
+    //
+    //
+    //  Main Function
+    //
+
+    public static void StartUpload(string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename, String[] AllowedFilesTypes)
+    {
+        try {
+
+            string GeneralError = GetGeneralError(FileFolder, AllowedFilesTypes);
+            if (!string.IsNullOrEmpty(GeneralError))
+            {
+                ResponseError(GeneralError);
+            }
+            else
+            {
+                System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
+                string Method = PageApp.Request[MethodParamName];
+                if (Method == "combine_chunks") {
+                    CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+                } else if (Method == "upload_chunk") {
+                    UploadChunk(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+                } else if (Method == "upload_through_iframe") {
+                    UploadThroughIframe(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+                } else if (Method == "upload_stream") {
+                    UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+                }
+            }
+
+        } catch (Exception e) {
+            ResponseError(e);
+        }
+    }
+
     //
     //
     //  Endpoints
@@ -77,14 +87,29 @@
         PageApp.Response.Write (GetJsonResponse(FileDataJson));
     }
 
-    public static void UploadChunk(string FileFolder)
+    public static void UploadChunk(string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         string FileName = PageApp.Request[FileNameParamName];
         string RequestId = PageApp.Request[RequestIdParamName];
         string ChunkIndex = PageApp.Request[ChunkIndexParamName];
-        string Folder = UploadFileChunk(FileName, FileFolder, RequestId, ChunkIndex);
-        PageApp.Response.Write (GetJsonResponse(@"{""success"": ""1""}"));
+        string TotalChunks = PageApp.Request[TotalChunksParamName];
+
+        int ChunkIndexInt = -1;
+        int.TryParse (ChunkIndex, out ChunkIndexInt);
+        int TotalChunksInt = -1;
+        int.TryParse (TotalChunks, out TotalChunksInt);
+        if (ChunkIndexInt >= 0 && TotalChunksInt > 0)
+        {
+            string Folder = UploadFileChunk(FileName, FileFolder, RequestId, ChunkIndex);
+            if (ChunkIndexInt+1 == TotalChunksInt)
+            {
+                CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
+            } else
+            {
+                PageApp.Response.Write (GetJsonResponse(@"{""success"": ""1""}"));
+            }
+        }
     }
 
     public static void UploadThroughIframe (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
@@ -99,7 +124,7 @@
         string[] Rotations = null;
         if (!string.IsNullOrEmpty(Rotation))
         {
-            Rotations = Rotation.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+            Rotations = Rotation.Split(new string[] { "," }, StringSplitOptions.None);
         }
         for (int i=0; i<PageApp.Request.Files.Count; i++) {
             RotationInt = 0;
@@ -119,7 +144,7 @@
         PageApp.Response.Write (ResponseStr);
     }
 
-    public void UploadStream (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
+    public static void UploadStream (string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename)
     {
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         string Rotation = PageApp.Request[FileRotationParamName];
@@ -320,17 +345,19 @@
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
         string FolderName = "temp_"+FileName+"_"+RequestId;
         string FilePath = PageApp.Server.MapPath(FileFolder+FolderName+"/");
-        string FileNameToSave = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
-        string NewFilePath = Path.Combine(PageApp.Server.MapPath(FileFolder), FileNameToSave);
+        string TempFileName = GetGuidFileName (FileName);
+        string NewFilePath = Path.Combine(PageApp.Server.MapPath(FileFolder), TempFileName);
         string[] FilePaths = Directory.GetFiles(FilePath);
         foreach (string Item in FilePaths) {
             MergeFileChunks(NewFilePath, Item);
         }
         if (Rotation > 0)
         {
-            RotateImage(FileNameToSave, FileFolder, FileNameToSave, FileFolder, Rotation);
+            RotateImage(TempFileName, FileFolder, TempFileName, FileFolder, Rotation);
         }
         Directory.Delete (PageApp.Server.MapPath(FileFolder+FolderName+"/"));
+        string FileNameToSave = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
+        System.IO.File.Move(PageApp.Server.MapPath(FileFolder+TempFileName), PageApp.Server.MapPath(FileFolder+FileNameToSave)); // Rename
         NameValueCollection ReturnObj = new NameValueCollection();
         ReturnObj[ReturnFileNameParamName] = FileNameToSave;
         ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileNameToSave, FileFolder);
@@ -361,38 +388,21 @@
 
         NameValueCollection ReturnObj = new NameValueCollection();
         System.Web.HttpContext PageApp = System.Web.HttpContext.Current;
-        FileName = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
         byte[] FileData = PageApp.Request.BinaryRead(PageApp.Request.TotalBytes);
-
+        string TempFileName = GetGuidFileName (FileName);
         if (FileData.Length >= 0)
         {
-            /*
-            string Extension = GetFileExtension(FileName).ToLower();
-            if (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp") {
-
-                MemoryStream Ms = new MemoryStream(FileData);
-                Bitmap Bmp = new Bitmap((Bitmap)System.Drawing.Image.FromStream(Ms, true, false));
-                Bmp.Save(PageApp.Server.MapPath(FileFolder)+FileName);
-                Ms.Close();
-                Bmp.Dispose();
-                if (Rotation != 0)
-                {
-                    RotateImage(FileName, FileFolder, FileName, FileFolder, Rotation);
-                }
-
-            } else {
-                File.WriteAllBytes(PageApp.Server.MapPath(FileFolder)+FileName, FileData);
-            }
-            */
-            File.WriteAllBytes(PageApp.Server.MapPath(FileFolder) + FileName, FileData);
+            File.WriteAllBytes(PageApp.Server.MapPath(FileFolder) + TempFileName, FileData);
             string Extension = GetFileExtension(FileName).ToLower();
             if ((Rotation != 0) && (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp"))
             {
-                RotateImage(FileName, FileFolder, FileName, FileFolder, Rotation);
+                RotateImage(TempFileName, FileFolder, TempFileName, FileFolder, Rotation);
             }
-
-            ReturnObj[ReturnFileNameParamName] = FileName;
-            ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileName, FileFolder);
+            
+            string FileNameToSave = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
+            System.IO.File.Move(PageApp.Server.MapPath(FileFolder+TempFileName), PageApp.Server.MapPath(FileFolder+FileNameToSave)); // Rename
+            ReturnObj[ReturnFileNameParamName] = FileNameToSave;
+            ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileNameToSave, FileFolder);
 
         } else {
             ReturnObj[ReturnErrorParamName] = "No stream data";
@@ -413,20 +423,36 @@
             if (String.IsNullOrEmpty(FileName)) {
                 FileName = postedFile.FileName;
             }
-            FileName = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
-            string SaveLocation = PageApp.Server.MapPath(FileFolder)+FileName;
+            string TempFileName = GetGuidFileName (FileName);
+            string SaveLocation = PageApp.Server.MapPath(FileFolder)+TempFileName;
             postedFile.SaveAs(SaveLocation);
             if (Rotation > 0)
             {
-                RotateImage(FileName, FileFolder, FileName, FileFolder, Rotation);
+                RotateImage(TempFileName, FileFolder, TempFileName, FileFolder, Rotation);
             }
-            ReturnObj[ReturnFileNameParamName] = FileName;
-            ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileName, FileFolder);
+            string FileNameToSave = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
+            System.IO.File.Move(PageApp.Server.MapPath(FileFolder+TempFileName), PageApp.Server.MapPath(FileFolder+FileNameToSave)); // Rename
+            ReturnObj[ReturnFileNameParamName] = FileNameToSave;
+            ReturnObj[ReturnFilePathParamName] = GetFileUrl (FileNameToSave, FileFolder);
 
         }else{
             ReturnObj[ReturnErrorParamName] = "File was not found";
         }
         return ReturnObj;
+    }
+
+    private static string GetGuidFileName (string FileName)
+    {
+        string Extension = "";
+        if (FileName.LastIndexOf(".") != -1) {
+            Extension = FileName.Substring(FileName.LastIndexOf("."), FileName.Length-FileName.LastIndexOf("."));
+        }
+        FileName = GetGuid();
+        if (!string.IsNullOrEmpty(Extension))
+        {
+            FileName += Extension;
+        }
+        return FileName;
     }
 
     private static string ParseFileName (string FileName, string FileFolder, bool DoOverwrite, bool SaveFileWithGuidFilename)
@@ -437,15 +463,7 @@
         }
         if (SaveFileWithGuidFilename)
         {
-            string Extension = "";
-            if (FileName.LastIndexOf(".") != -1) {
-                Extension = FileName.Substring(FileName.LastIndexOf("."), FileName.Length-FileName.LastIndexOf("."));
-            }
-            FileName = GetGuid();
-            if (!string.IsNullOrEmpty(Extension))
-            {
-                FileName += Extension;
-            }
+            FileName = GetGuidFileName(FileName);
         }
         FileName = FileName.Replace("/", "")
             .Replace("\\", "")
