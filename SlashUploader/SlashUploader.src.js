@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.4
+ * SlashUploader - JS plugin - Version 1.5.5
  * Copyright (c) 2018 Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
  */
@@ -164,7 +164,6 @@ function SlashUploader (element, opts) {
 	        return _variables.uploadedFiles;
 	    },
 	    set: function(value) {
-			console.log (this);
 			_variables.uploadedFiles = value;
 			this._internalVariables.setVariable("uploadedFiles");
 	    }
@@ -178,209 +177,6 @@ function SlashUploader (element, opts) {
 	    }
 	});
 	
-	/*
-	
-	Object.defineProperty(this, 'acceptOnlyFilesTypes', { // e.g: "image/*", "video/*", "text/html", ".csv", "application/vnd.ms-excel"
-	    get: function() {
-	        return _variables.acceptOnlyFilesTypes;
-	    },
-	    set: function(value) {
-	        _variables.acceptOnlyFilesTypes = value;
-	        this._internalVariables.setVariable("acceptOnlyFilesTypes");
-	    }
-	});
-	Object.defineProperty(this, 'showUploadedFiles', {
-	    get: function() {
-	        return _variables.showUploadedFiles;
-	    },
-	    set: function(value) {
-	        _variables.showUploadedFiles = value;
-	        this._internalVariables.setVariable("showUploadedFiles");
-	    }
-	});
-	Object.defineProperty(this, 'disabled', {
-	    get: function() {
-	        return _variables.disabled;
-	    },
-	    set: function(value) {
-	        _variables.disabled = value;
-	        this._internalVariables.setVariable("disabled");
-	    }
-	});
-	Object.defineProperty(this, 'enableDropFiles', {
-	    get: function() {
-	        return _variables.enableDropFiles;
-	    },
-	    set: function(value) {
-	        _variables.enableDropFiles = value;
-	        this._internalVariables.setVariable("enableDropFiles");
-	    }
-	});
-	Object.defineProperty(this, 'maxFiles', {
-	    get: function() {
-	        return _variables.maxFiles;
-	    },
-	    set: function(value) {
-	        _variables.maxFiles = value;
-	        this._internalVariables.setVariable("maxFiles");
-	    }
-	});
-	Object.defineProperty(this, 'progressAnimationType', {
-	    get: function() {
-	        return _variables.progressAnimationType;
-	    },
-	    set: function(value) {
-	        _variables.progressAnimationType = value;
-	        this._internalVariables.setVariable("progressAnimationType");
-	    }
-	});
-	Object.defineProperty(this, 'maxFileChars', {
-	    get: function() {
-	        return _variables.maxFileChars;
-	    },
-	    set: function(value) {
-	        _variables.maxFileChars = value;
-	        this._internalVariables.setVariable("maxFileChars");
-	    }
-	});
-	Object.defineProperty(this, 'uploadedFiles', {
-	    get: function() {
-	        return _variables.uploadedFiles;
-	    },
-	    set: function(value) {
-	        _variables.uploadedFiles = value;
-	        this._internalVariables.setVariable("uploadedFiles");
-	    }
-	});
-	Object.defineProperty(this, 'browseText', {
-	    get: function() {
-	        return _variables.browseText;
-	    },
-	    set: function(value) {
-	        _variables.browseText = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'browseTextDropDisabled', {
-	    get: function() {
-	        return _variables.browseTextDropDisabled;
-	    },
-	    set: function(value) {
-	        _variables.browseTextDropDisabled = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'rtl', {
-	    get: function() {
-	        return _variables.rtl;
-	    },
-	    set: function(value) {
-	        _variables.rtl = value;
-	        this._internalVariables.setVariable("rtl");
-	    }
-	});
-	Object.defineProperty(this, 'height', {
-	    get: function() {
-	        return _variables.height;
-	    },
-	    set: function(value) {
-	        _variables.height = value;
-	        this._internalVariables.setVariable("height");
-	    }
-	});
-	Object.defineProperty(this, 'showFocusRect', {
-	    get: function() {
-	        return _variables.showFocusRect;
-	    },
-	    set: function(value) {
-	        _variables.showFocusRect = value;
-	        this._internalVariables.setVariable("showFocusRect");
-	    }
-	});
-	Object.defineProperty(this, 'dropFilesText', {
-	    get: function() {
-	        return _variables.dropFilesText;
-	    },
-	    set: function(value) {
-	        _variables.dropFilesText = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'uploadingFileText', {
-	    get: function() {
-	        return _variables.uploadingFileText;
-	    },
-	    set: function(value) {
-	        _variables.uploadingFileText = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'uploadingFileTextProgressBar', {
-	    get: function() {
-	        return _variables.uploadingFileTextProgressBar;
-	    },
-	    set: function(value) {
-	        _variables.uploadingFileTextProgressBar = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'uploadingFilesText', {
-	    get: function() {
-	        return _variables.uploadingFilesText;
-	    },
-	    set: function(value) {
-	        _variables.uploadingFilesText = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'uploadingFilesTextProgressBar', {
-	    get: function() {
-	        return _variables.uploadingFilesTextProgressBar;
-	    },
-	    set: function(value) {
-	        _variables.uploadingFilesTextProgressBar = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'uploadingFileByFileText', {
-	    get: function() {
-	        return _variables.uploadingFileByFileText;
-	    },
-	    set: function(value) {
-	        _variables.uploadingFileByFileText = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	Object.defineProperty(this, 'uploadedFileHtml', {
-	    get: function() {
-	        return _variables.uploadedFileHtml;
-	    },
-	    set: function(value) {
-	        _variables.uploadedFileHtml = value;
-	        this._internalVariables.setVariable("uploadedFileHtml");
-	    }
-	});
-	Object.defineProperty(this, 'uploadedFileTemplate', {
-	    get: function() {
-	        return _variables.uploadedFileTemplate;
-	    },
-	    set: function(value) {
-	        _variables.uploadedFileTemplate = value;
-	        this._internalVariables.setVariable("uploadedFileTemplate");
-	    }
-	});
-	Object.defineProperty(this, 'cancelText', {
-	    get: function() {
-	        return _variables.cancelText;
-	    },
-	    set: function(value) {
-	        _variables.cancelText = value;
-	        this._internalVariables.setVariable();
-	    }
-	});
-	*/
-	
-
 	this.onFilesSelected = null;
 	this.onFilesUploaded = null;
 	this.onFileDeleted = null;
@@ -399,10 +195,9 @@ function SlashUploader (element, opts) {
 	this.displayErrorDuration = 4500;
 	
 	_variables.serverScripts = {
-		uploadChunk: "./SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
-		combineChunks: "./SlashUploader/server/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}",
-		uploadStream: "./SlashUploader/server/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}",
-		uploadThroughIframe: "./SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}",
+		uploadChunk: "./SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&total_chunks={{total_chunks}}&request_id={{request_id}}&rotation={{rotation}}",
+		uploadStream: "./SlashUploader/server/UploadFiles.aspx?method=upload_stream&file_name={{file_name}}&rotation={{rotation}}",
+		uploadThroughIframe: "./SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}&rotation={{rotation}}",
 		fileNameVariableName: "file_name",
 		fileUrlVariableName: "file_path",
 		errorVariableName: "error"
@@ -756,9 +551,10 @@ function SlashUploader (element, opts) {
 		noJquery(instance.elements.uploaderDropAreaElement).find(".input_wrapper").remove();
 		noJquery(instance.elements.uploaderDropAreaElement).append( noJquery("<div class='input_wrapper'><input id='"+instance.elements.elementId+"_input' name='"+instance.elements.elementId+"_input' type='file' "+((instance.maxFiles > 1) ? "multiple" : "")+" /></div>")[0] );
 
-	    var filesUpload = noJquery(instance.elements.containerElement).find("input")[0];
-	    if (filesUpload != null) {
-	        filesUpload.onchange = function () {
+		//var filesUpload = noJquery(instance.elements.containerElement).find("input")[0];
+		instance.elements.uploaderInputElement = noJquery(instance.elements.containerElement).find("input")[0];
+	    if (instance.elements.uploaderInputElement != null) {
+	        instance.elements.uploaderInputElement.onchange = function () {
 
 	        	instance._internalVariables.onChangeTriggered = true;
 	        	var curFiles = this.files;
@@ -798,24 +594,33 @@ function SlashUploader (element, opts) {
 	        }
 
 			if (!instance._internalVariables.isMobileOrTablet()) {
-				filesUpload.onmouseover = function () {
+				instance.elements.uploaderInputElement.onmouseover = function () {
 					instance._internalVariables.hoverOnBtn = true;
 					instance._internalVariables.checkDragFileStates ();
 				}
-				filesUpload.onmouseout = function () {
+				instance.elements.uploaderInputElement.onmouseout = function () {
+					instance._internalVariables.hoverOnBtn = false;
+					instance._internalVariables.checkDragFileStates ();
+				}
+			} else {
+				instance.elements.uploaderInputElement.ontouchstart = function () {
+					instance._internalVariables.hoverOnBtn = true;
+					instance._internalVariables.checkDragFileStates ();
+				}
+				instance.elements.uploaderInputElement.ontouchend = function () {
 					instance._internalVariables.hoverOnBtn = false;
 					instance._internalVariables.checkDragFileStates ();
 				}
 			}
+			instance.elements.uploaderInputElement.onfocus = function(){
+				noJquery(instance.elements.containerElement).addClass("focused");
+			}
+			instance.elements.uploaderInputElement.onblur = function(){
+				noJquery(instance.elements.containerElement).removeClass("focused");
+			}
 
 	    }
-		instance.elements.uploaderInputElement = noJquery(instance.elements.containerElement).find("input")[0];
-		instance.elements.uploaderInputElement.onfocus = function(){
-			noJquery(instance.elements.containerElement).addClass("focused");
-		}
-		instance.elements.uploaderInputElement.onblur = function(){
-			noJquery(instance.elements.containerElement).removeClass("focused");
-		}
+
 	    instance._internalVariables.setVariable("acceptOnlyFilesTypes");
 	    instance._internalVariables.setVariable("showUploadedFiles");
 	    instance._internalVariables.setVariable("disabled");
@@ -1349,7 +1154,7 @@ function SlashUploader (element, opts) {
 		noJquery(instance.elements.uploaderProgressBarTextElement).html(text);
 		
 		instance._internalVariables.isUploading = true;
-
+		instance._internalVariables.onFileProgress (0);
 		instance._internalVariables.setCancelButtonDisplay();
 		instance._internalVariables.setProgressDisplay();
 	    noJquery(instance.elements.containerElement).find("input").attr("onclick", "return false;");
@@ -1392,13 +1197,12 @@ function SlashUploader (element, opts) {
 		if (instance._internalVariables.getUploadType() == "chunks") {
 			
 			var fileData = instance._internalVariables.curUploadingFilesData[fileIndex];
-			script = instance.serverScripts.uploadChunk+"&_="+Math.random();
 	        var fileName = fileData.name;
-	        var fileExtension = fileName.substr(fileName.lastIndexOf("."), 5);
+	        //var fileExtension = fileName.substr(fileName.lastIndexOf("."), 5);
 			var blob = files[fileIndex].file;
-            var completed = 0;
+            //var completed = 0;
             var randomId = Math.floor(Math.random()*999999999);
-            instance._internalVariables.uploadFileChunk (script, fileData, randomId, blob, 0, 0, instance._internalVariables.BYTES_PER_CHUNK);
+            instance._internalVariables.uploadFileChunk (fileData, randomId, blob, 0, 0, instance._internalVariables.BYTES_PER_CHUNK);
             
 		} else {
 
@@ -1423,7 +1227,6 @@ function SlashUploader (element, opts) {
 				        instance._internalVariables.curUploadingFileIndex ++;
 				        var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
 				        if (isLastFile) {
-				        	//instance._internalVariables.curUploadingFileIndex = Math.min(instance._internalVariables.curUploadingFilesData.length, instance.maxFiles)-1;
 				        	instance._internalVariables.curUploadingFileIndex --;
 				        }
 
@@ -1455,7 +1258,6 @@ function SlashUploader (element, opts) {
 
 					}
 					
-
 				}, false);
 
 				script = instance.serverScripts.uploadStream;
@@ -1548,9 +1350,10 @@ function SlashUploader (element, opts) {
 
 	}
 
-	this._internalVariables.uploadFileChunk = function (script, file, uploaderId, blob, index, start, end) {
-
+	this._internalVariables.uploadFileChunk = function (file, uploaderId, blob, chunkIndex, start, end) {
+		
 		var instance = this.instance;
+		var script = instance.serverScripts.uploadChunk+"&_="+Math.random();
 		var SIZE = blob.size;
 		var chunk;
     	if (blob.slice) {
@@ -1560,7 +1363,8 @@ function SlashUploader (element, opts) {
 	    } else if (blob.webkitSlice) {
 	    	chunk = blob.webkitSlice(start, end);
 	    }
-
+		var chunksCount = SIZE % instance._internalVariables.BYTES_PER_CHUNK == 0 ? SIZE / instance._internalVariables.BYTES_PER_CHUNK : Math.floor(SIZE / instance._internalVariables.BYTES_PER_CHUNK) + 1;
+		
         var xhr = new XMLHttpRequest();
         instance._internalVariables.uploadXhr = xhr;
         xhr.onload = function () {
@@ -1572,9 +1376,10 @@ function SlashUploader (element, opts) {
 				if (xhr.status === 200) {
 
 					var hasError = false;
+					var result = null;
 					try {
 
-						var result = JSON.parse(this.response);
+						result = JSON.parse(this.response);
 						if (Array.isArray(result)) {
 
 							for (var i=0; i<result.length; i++) {
@@ -1598,27 +1403,53 @@ function SlashUploader (element, opts) {
 						}
 
 					} catch (err) {
-						instance._internalVariables.consoleError(err);
+						instance._internalVariables.setError('parse_failed', file);
+						instance._internalVariables.consoleError (err);
+						hasError = true;
 					}
 
 					if (hasError) {
+
 						instance._internalVariables.abortAndCancelUpload();
+
 					} else {
-						var count = SIZE % instance._internalVariables.BYTES_PER_CHUNK == 0 ? SIZE / instance._internalVariables.BYTES_PER_CHUNK : Math.floor(SIZE / instance._internalVariables.BYTES_PER_CHUNK) + 1;
-			            if (instance._internalVariables.onFileProgress != null && typeof(instance._internalVariables.onFileProgress) == "function") {
-							instance._internalVariables.onFileProgress (index/count);
-						}
-			            if (index == count) {
+						
+						if (result != null &&
+							(
+								(Array.isArray(result) && result.length > 0 && result[0][instance.serverScripts.fileNameVariableName] != null &&result[0][instance.serverScripts.fileNameVariableName] != "")
+								|| (typeof(result) == "object" && result[instance.serverScripts.fileNameVariableName] != null &&result[instance.serverScripts.fileNameVariableName] != ""))
+							) {
+							
+							// Chunks combined
+							instance._internalVariables.curUploadingFileIndex ++;
+							var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
+							instance._internalVariables.parseUploadResult (result, isLastFile, file);
+							if (!isLastFile && instance._internalVariables.curUploadingFilesData.length > 0) {
+								instance._internalVariables.uploadFile ();
+							}
 							instance._internalVariables.uploadXhr = null;
-			            	instance._internalVariables.uploadFileInChunksComplete(file, uploaderId);
-			            } else {
-					        start = end;
-					        end = start + instance._internalVariables.BYTES_PER_CHUNK;
-			        		index ++;
-			        		if (instance._internalVariables.isUploading) {
-			        			instance._internalVariables.uploadFileChunk (script, file, uploaderId, blob, index, start, end);
-			        		}
-			            }
+
+						} else {
+
+							if (instance._internalVariables.onFileProgress != null && typeof(instance._internalVariables.onFileProgress) == "function") {
+								instance._internalVariables.onFileProgress (chunkIndex/chunksCount);
+							}
+							if (chunkIndex < chunksCount) {
+								start = end;
+								end = start + instance._internalVariables.BYTES_PER_CHUNK;
+								chunkIndex ++;
+								if (instance._internalVariables.isUploading) {
+									instance._internalVariables.uploadFileChunk (file, uploaderId, blob, chunkIndex, start, end);
+								}
+							} else {
+								//instance._internalVariables.uploadXhr = null;
+								//instance._internalVariables.uploadFileInChunksComplete(file, uploaderId);
+							}
+							
+
+						}
+
+			            
 					}
 
 		        } else if (xhr.status === 0) {
@@ -1630,18 +1461,23 @@ function SlashUploader (element, opts) {
 				}  
 			}
 		};
-		var scriptToPost = script.split("{{file_name}}").join(file.name).split("{{chunk_index}}").join(index).split("{{request_id}}").join(uploaderId);
+		var scriptToPost = script
+							.split("{{file_name}}").join(file.name)
+							.split("{{chunk_index}}").join(chunkIndex)
+							.split("{{total_chunks}}").join(chunksCount)
+							.split("{{request_id}}").join(uploaderId);
+		scriptToPost = instance._internalVariables.replaceFileDataParams(file, scriptToPost);
+
 		xhr.open("POST", scriptToPost);
         xhr.send(chunk);
 
 	}
-
+	/*
 	this._internalVariables.uploadFileInChunksComplete = function (file, uploaderId) {
 
 		var instance = this.instance;
 		var script = instance.serverScripts.combineChunks.split("{{file_name}}").join(file.name).split("{{request_id}}").join(uploaderId);
 		script = instance._internalVariables.replaceFileDataParams(file, script);
-		//.split("{{rotation}}").join(file.rotation);
 
 		instance._internalVariables.uploadXhr = noJquery.ajax ({
 			url: script,
@@ -1666,7 +1502,7 @@ function SlashUploader (element, opts) {
 		});
 
 	};
-
+	*/
 	this._internalVariables.onFileProgress = function (progress) {
 
 		var instance = this.instance;
@@ -1950,15 +1786,15 @@ function SlashUploader (element, opts) {
 	}
 
 	this._internalVariables.getUploadType = function () {
-
+		
 		var instance = this.instance;
 		if (instance._internalVariables.canUploadFileInchunks()) {
 			
 			if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream)) {
 				return "chunks";
 			} else {
-				var isEdge = navigator.userAgent.indexOf("Edge") > -1;
-				if (isEdge) { // Edge progress event isn't possible with Stream (https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12224510/)
+				var edgeVersion = instance._internalVariables.getEdgeVersion();
+				if (edgeVersion > 0 && edgeVersion < 18) { // Edge 17 and below progress event isn't possible with Stream (https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12224510/)
 					return "chunks";
 				} else {
 					return "stream";
@@ -2032,6 +1868,16 @@ function SlashUploader (element, opts) {
         	ieVersion = 11;
         }
         return ieVersion;
+
+	}
+
+	this._internalVariables.getEdgeVersion = function () {
+
+		var version = -1;
+		if (navigator.userAgent.indexOf("Edge") != -1) {
+            version = parseFloat(navigator.userAgent.split("Edge/")[1]);
+        }
+        return version;
 
 	}
 

@@ -146,6 +146,10 @@
 .slash_uploader .uploader_drop_area_middle img {
 	opacity: 0.15;
 }
+.slash_uploader:not(.hover):not(.dragged_over) .uploader_drop_area {
+	-webkit-transition: background-color 0.3s ease;
+	transition: background-color 0.3s ease;
+}
 .slash_uploader.hover .uploader_drop_area {
 	background: #E5F5FF;
     padding: 0px 0px 0px 0px;
@@ -205,6 +209,14 @@
 	opacity: 0;
 	filter: alpha(opacity = 0);
 	filter: progid:DXImageTransform.Microsoft.Alpha(opacity = 0);
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
 }
 
 .slash_uploader .uploader_drop_area_custom {
@@ -486,13 +498,8 @@
 	.slash_uploader .uploader_result_file:first-child {
 		padding-top: 5px;
 	}
-	.slash_uploader.uploading .uploader_drop_area .uploader_text .uploader_text_container,
-	.slash_uploader .uploader_drop_area .uploader_cancel span {
-		line-height: 14px;
-		font-size: 11px;
-	}
 	.slash_uploader .uploader_progress_bar_padding {
-		width: 1px;
+		width: 2px;
 	}
 	.uploader_progress_bar_text {
 		font-size: 14px;
