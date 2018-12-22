@@ -245,8 +245,7 @@ function buildUploaders () {
 	
 	
 	var crossDomainScripts = {
-		uploadChunk: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&request_id={{request_id}}",
-		combineChunks: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=combine_chunks&rotation={{rotation}}&file_name={{file_name}}&request_id={{request_id}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}",
+		uploadChunk: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&total_chunks={{total_chunks}}&request_id={{request_id}}&rotation={{rotation}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}",
 		uploadStream: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_stream&rotation={{rotation}}&file_name={{file_name}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}",
 		uploadThroughIframe: "//slashuploader.com/src/js/SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&rotation={{rotation}}&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}&file_size={{size}}&file_rotation={{rotation}}&file_duration={{duration}}&file_w={{width}}&file_h={{height}}&file_ext={{extension}}"
 	};
@@ -344,7 +343,6 @@ function buildUploaders () {
 html, body {
 	font-family: arial;
 }
-
 .uploader_field_container {
 	background: #F7F7F7;
 	border: 1px solid #CCC;
@@ -437,6 +435,11 @@ html, body {
 	}
 	.status_th {
 		width: 55px;
+	}
+	.slash_uploader.uploading .uploader_drop_area .uploader_text .uploader_text_container,
+	.slash_uploader .uploader_drop_area .uploader_cancel span {
+		line-height: 14px;
+		font-size: 11px;
 	}
 }
 
