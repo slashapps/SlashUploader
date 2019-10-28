@@ -1,9 +1,19 @@
+/*
+ * SlashUploader - JS plugin - Version 1.5.7
+ * http://slashuploader.com/
+ * Copyright (c) 2018-present Slash Apps Development, http://slash.co.il/
+ * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
+ */
+
 .slash_uploader_form {
 	width: 0; height: 0;
 	margin: 0; padding: 0; display: none;
 }
 .slash_uploader .uploader_container {
 	margin: 0; padding: 0; display: inline;
+}
+.slash_uploader:not(.rtl) {
+	direction: ltr;
 }
 .slash_uploader .uploader_container .uploader_div {
 	min-height: 30px;
@@ -21,7 +31,7 @@
 	float: left;
 	overflow: hidden;
 }
-.slash_uploader .uploader_container.rtl .uploader_drop_area_wrapper {
+.slash_uploader.rtl .uploader_drop_area_wrapper {
 	float: right;
 }
 .slash_uploader .uploader_drop_area {
@@ -45,7 +55,7 @@
 .slash_uploader .uploader_drop_area .uploader_text .uploader_text_container {
 	overflow: hidden;
 }
-.slash_uploader .uploader_container.rtl .uploader_drop_area .uploader_text {
+.slash_uploader.rtl .uploader_drop_area .uploader_text {
 	direction: rtl;
 }
 .slash_uploader.uploading .uploader_drop_area .uploader_text .uploader_text_container,
@@ -63,7 +73,7 @@
 	z-index: 2;
 	display: none;
 }
-.slash_uploader .uploader_container.rtl .uploader_drop_area .uploader_cancel {
+.slash_uploader.rtl .uploader_drop_area .uploader_cancel {
 	right: auto; left: 5px;
 	direction: rtl;
 }
@@ -85,7 +95,7 @@
 	border-bottom-right-radius: 0px;
 	border-top-right-radius: 0px;
 }
-.slash_uploader .rtl .uploader_drop_area_bottom {
+.slash_uploader.rtl .uploader_drop_area_bottom {
 	border-bottom-right-radius: 4px;
 	border-top-right-radius: 4px;
 	border-bottom-left-radius: 0px;
@@ -119,7 +129,7 @@
 	background: #E5F5FF;
 	z-index: 2;
 }
-.slash_uploader .uploader_container.rtl .uploader_drop_area_bottom {
+.slash_uploader.rtl .uploader_drop_area_bottom {
 	left: auto;
 	direction: rtl;
 }
@@ -172,7 +182,7 @@
 .slash_uploader .uploader_drop_area .uploader_spinner {
 	top: 3px; left: -3px;
 }
-.slash_uploader .uploader_container.rtl .uploader_drop_area .uploader_spinner {
+.slash_uploader.rtl .uploader_drop_area .uploader_spinner {
 	left: 3px;
 }
 .slash_uploader .uploader_drop_area .input_wrapper {
@@ -251,7 +261,7 @@
 	width: 100%;
 	border-spacing: 0; border-collapse: collapse; border: none;
 }
-.slash_uploader .uploader_container.rtl .uploader_progress_container table {
+.slash_uploader.rtl .uploader_progress_container table {
 	direction: rtl;
 }
 .slash_uploader .uploader_progress_container .uploader_progress_bar {
@@ -281,7 +291,7 @@
     max-width: 60%;
     overflow: hidden;
 }
-.slash_uploader .uploader_container.rtl .uploader_progress_bar_text {
+.slash_uploader.rtl .uploader_progress_bar_text {
 	text-align: right;
 }
 .slash_uploader .uploader_progress_container .uploader_progress_bar div div {
@@ -341,13 +351,14 @@
 	padding-left: 6px;
 	overflow: hidden; vertical-align: bottom;
 	word-break: break-word;
-	width: calc(50% - 25px);
+	/*width: calc(50% - 25px);*/
+	width: calc(50% - 12px);
 	float: left;
 	min-height: 100%;
 	display: table;
 	text-align: left;
 }
-.slash_uploader .uploader_container.rtl .uploader_result_wrapper {
+.slash_uploader.rtl .uploader_result_wrapper {
 	float: right;
 	text-align: right;
 }
@@ -361,7 +372,7 @@
 	/*word-break: normal;*/
 	word-break: break-word;
 }
-.slash_uploader .uploader_container.rtl .uploader_result.error {
+.slash_uploader.rtl .uploader_result.error {
 	text-align: right;
 	direction: rtl;
 }
@@ -374,13 +385,13 @@
     background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAeUlEQVQ4jdWSUQoDIQxEX4oX2IP1Skrmwj1C+qPgrutSl360D8RJMGEStIjgiKQhmXO2Y87MICJ2x93jjJrfvQUwdx8tfEgpxVK1t1wsCYDUB7e4mntG2wfAY2btSvcMDVb54wZtJz84Qv8rZ/qrDlK9N0mvhbpnE2+HaoSqJnzSpgAAAABJRU5ErkJggg==);
 }
 .slash_uploader .uploader_result_file {
-	min-width: 100px;
+	min-width: 40px;
 	word-break: break-all;
 }
 .slash_uploader .uploader_result_file a {
 	color: #09F;
 }
-.slash_uploader .uploader_container.rtl .uploader_result_file {
+.slash_uploader.rtl .uploader_result_file {
 	direction: rtl;
 }
 .slash_uploader.disabled .uploader_delete_btn,
@@ -484,29 +495,48 @@
 }
 
 @media (max-width: 640px) {
-	.slash_uploader .uploader_drop_area_wrapper {
+	.slash_uploader[data-show-uploaded-files='default'] .uploader_drop_area_wrapper {
 		width: 100% !important;
 	}
-	.slash_uploader .uploader_result_wrapper {
+	.slash_uploader[data-show-uploaded-files='default'] .uploader_result_wrapper {
 		height: auto !important;
 		width: calc(100% - 25px);
 		display: block;
 	}
-	.slash_uploader .uploader_result {
+	.slash_uploader[data-show-uploaded-files='default'] .uploader_result {
 		display: inline;
 	}
-	.slash_uploader .uploader_result_file:first-child {
+	.slash_uploader[data-show-uploaded-files='default'] .uploader_result_file:first-child {
 		padding-top: 5px;
 	}
-	.slash_uploader .uploader_progress_bar_padding {
-		width: 2px;
-	}
-	.uploader_progress_bar_text {
-		font-size: 14px;
+	.slash_uploader[data-show-uploaded-files='default'] .uploader_progress_bar_padding {
+		width: 4px;
 	}
 	.slash_uploader .uploader_drop_area .uploader_spinner {
 		width: 12px;
 		height: 12px;
 		top: 4px;
 	}
+	.uploader_progress_bar_text {
+		font-size: 14px;
+	}
+}
+/* default / below / beside */
+
+.slash_uploader[data-show-uploaded-files='below'] .uploader_drop_area_wrapper {
+	width: 100% !important;
+}
+.slash_uploader[data-show-uploaded-files='below'] .uploader_result_wrapper {
+	height: auto !important;
+	width: calc(100% - 25px);
+	display: block;
+}
+.slash_uploader[data-show-uploaded-files='below'] .uploader_result {
+	display: inline;
+}
+.slash_uploader[data-show-uploaded-files='below'] .uploader_result_file:first-child {
+	padding-top: 5px;
+}
+.slash_uploader[data-show-uploaded-files='below'] .uploader_progress_bar_padding {
+	width: 4px;
 }
