@@ -1,0 +1,217 @@
+/* ==== Cropper ==== */
+
+.cropper-modal {
+	opacity: 0.7 !important;
+}
+
+#cropper_popup {
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+	background-color: #737377;
+	z-index: 300;
+	display: none;
+	margin: auto;
+	text-align: center;
+	direction: ltr;
+	font-family: Arial, Helvetica, sans-serif;
+}
+
+#cropper_container {
+	width: 100%;
+	margin: auto;
+}
+
+#cropper_buttons {
+	position: absolute;
+	bottom: 0px;
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+	padding-bottom: 20px;
+}
+
+.cropper-container.cropper-bg {
+	height: 100% !important;
+}
+
+#cropper_canvas {}
+
+#cropper_loading_animation {
+	width: 1px;
+	height: 1px;
+	margin: auto;
+	color: white;
+}
+
+#cropper_rotation_slider,
+#cropper_degree_slider {
+	width: 700px;
+}
+
+#cropper_rotation_slider,
+.cropper_slides_wrapper,
+#cropper_degree_slider {
+	height: 34px;
+}
+
+#cropper_rotation_slider {
+	margin: 6px auto;
+	max-width: 100%;
+	z-index: 101;
+	padding-bottom: 10px;
+}
+
+.cropper_slides_wrapper {
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+	z-index: 102;
+	-webkit-mask: linear-gradient(90deg, transparent 5%, #000 20%, #000 80%, transparent 95%);
+}
+
+.cropper_slides_wrapper:after {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	top: 0;
+	bottom: 0;
+	left: 50%;
+	border-left: 1px solid white;
+	transform: translate(-50%);
+}
+
+#cropper_slides {
+	display: flex;
+	position: relative;
+	top: 0;
+	left: -900px;
+	width: 2200px;
+}
+
+#cropper_slides.shifting {
+	transition: left .2s ease-out;
+}
+
+#cropper_degree_slider {
+	cursor: grab;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	transition: all 1s;
+	position: relative;
+	border-radius: 2px;
+	width: 2200px;
+	opacity: 0.7;
+	background-image: url("degree_slider.png");
+	background-repeat: no-repeat;
+}
+
+.dragging #cropper_degree_slider {
+	cursor: grabbing;
+}
+
+#cropper_buttons .cropper_btn {
+	font-size: 15px;
+	color: white;
+	cursor: pointer;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	padding-right: 8px;
+	padding-left: 8px;
+	display: inline-block;
+	vertical-align: middle;
+	transition: all .25s;
+	-webkit-touch-callout: none;
+	/* iOS Safari */
+	-webkit-user-select: none;
+	/* Safari */
+	-khtml-user-select: none;
+	/* Konqueror HTML */
+	-moz-user-select: none;
+	/* Firefox */
+	-ms-user-select: none;
+	/* Internet Explorer/Edge */
+	user-select: none;
+	/* Non-prefixed version, currently
+								supported by Chrome and Opera */
+}
+
+/* Non-Touch device */
+@media (hover: hover) {
+	#cropper_buttons .cropper_btn:hover {
+		background: rgba(255, 255, 255, 0.3);
+	}
+}
+
+/* Touch device */
+@media (hover: none) {
+	#cropper_buttons .cropper_btn:active {
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	#cropper_buttons .cropper_btn_flip_horizontal,
+	#cropper_buttons .cropper_btn_flip_vertical {
+		display: none;
+	}
+
+}
+
+#cropper_buttons .cropper_btn span {
+	background: url(icons.png);
+	height: 20px;
+	width: 25px;
+	display: inline-block;
+	position: relative;
+	top: -1px;
+	margin-right: 4px;
+	vertical-align: middle;
+}
+
+#cropper_buttons .cropper_btn_resize_enlarge span {
+	background-position: -72px 0px;
+}
+
+#cropper_buttons .cropper_btn_resize_reduce span {
+	background-position: -48px 0px;
+}
+
+#cropper_buttons .cropper_btn_flip_horizontal span {
+	background-position: -24px 0px;
+}
+
+#cropper_buttons .cropper_btn_flip_vertical span {
+	background-position: 0px 0px;
+}
+
+#cropper_buttons .cropper_btn_crop span {
+	background-position: -96px 0px;
+}
+
+#cropper_buttons .cropper_btn_reset span {
+	background-position: -120px 0px;
+}
+
+#cropper_buttons .cropper_btn_cancel span {
+	background-position: -144px 0px;
+}
+
+#cropper_buttons .cropper_btn_sep_2 {
+	height: 20px;
+	width: 30px;
+	display: inline-block;
+}
+
+@media screen and (max-width: 820px) {
+	#cropper_buttons .cropper_btn_sep_1 {
+		display: block;
+	}
+
+	#cropper_buttons .cropper_btn_sep_2 {
+		display: block;
+		height: 0px;
+	}
+}

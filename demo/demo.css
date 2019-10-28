@@ -1,0 +1,138 @@
+html,
+body {
+    /*font-family: fantasy;*/
+}
+
+.uploader_field_container {
+    background: #F7F7F7;
+    border: 1px solid #CCC;
+    border-radius: 2px;
+    vertical-align: top;
+}
+
+.uploader_field {
+    /*width: 450px;*/
+}
+
+#uploader_field3,
+#uploader_field4 {
+    height: 70px;
+}
+
+.uploader_status {
+    vertical-align: top;
+    font-size: 12px;
+}
+
+.custom_html {
+    width: 120px;
+    height: auto;
+    border: 2px solid red;
+    transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+}
+
+.custom_html.hover {
+    background-color: tomato;
+}
+
+.custom_html.dragged_enter {
+    border: 2px dashed red;
+    background-color: white;
+}
+
+.custom_html.dragged_over {
+    border: 2px dashed tomato;
+    background-color: #ffcaca;
+}
+
+.custom_html.uploading {
+    opacity: 0.5;
+}
+
+
+.custom_css .uploader_drop_area {
+    border: 2px solid green;
+    color: green;
+}
+
+.custom_css.hover .uploader_drop_area {
+    background: #93c293;
+    color: white;
+}
+
+.custom_css.dragged_enter .uploader_drop_area {
+    background: #296d29;
+    color: white;
+    border: 2px dashed white;
+}
+
+.custom_css.dragged_over .uploader_drop_area {
+    background: #0c510c;
+    color: white;
+    border: 2px dashed white;
+}
+
+.custom_css.uploading .uploader_text span {
+    font-weight: bold;
+}
+
+.custom_css .uploader_drop_area_bottom {
+    background: #97e497;
+}
+
+.custom_css .uploader_spinner {
+    border: 2px solid green;
+    border-right: 2px solid rgba(0, 255, 0, 0.25);
+    border-bottom: 2px solid rgba(0, 255, 0, 0.25);
+    border-left: 2px solid rgba(0, 255, 0, 0.25);
+}
+
+.custom_css .uploader_result_file a {
+    color: green;
+}
+
+.custom_css .uploader_progress_container .uploader_progress_bar>div>div {
+    background: green;
+}
+
+.demos_table {
+    width: 100%;
+}
+
+.demos_table .uploader_title {
+    width: 160px;
+}
+
+@media (max-width: 640px) {
+    .uploader_field {
+        /*width: 100%;*/
+    }
+
+    .title_th {
+        width: 25px;
+    }
+
+    .uploader_th,
+    .uploader_field_container {
+        max-width: 150px;
+    }
+
+    .status_th {
+        width: 55px;
+    }
+
+    .slash_uploader.uploading .uploader_drop_area .uploader_text .uploader_text_container,
+    .slash_uploader .uploader_drop_area .uploader_cancel span {
+        line-height: 14px;
+        font-size: 11px;
+    }
+}
+
+@media (min-width: 1000px) {
+
+    .uploader_field_container {
+        width: 500px;
+    }
+
+}
