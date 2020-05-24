@@ -408,12 +408,3 @@ function buildUploaders() {
 
 
 }
-var myUploader = new SlashUploader(document.getElementById("my-uploader"), {
-    doGetFileMetadata: false,
-    enableCancelButton: false,
-    enableDeleteButton: false,
-    enableDropFiles: false,
-    showDetailedErrorFromServer: false,
-    resetFilesOnEachUpload: false,
-    uploadTypePriority: ["iframe", "stream", "chunks"]
-});
