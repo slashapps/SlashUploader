@@ -11,14 +11,14 @@
 	<title>SlashUploader Demos</title>
 
 
-	<script src="../SlashUploader/SlashUploader.src.js"></script>
-	<link rel="stylesheet" href="../SlashUploader/SlashUploader.src.css" type="text/css" />
+	<script src="../SlashUploader/SlashUploader.min.js"></script>
+	<link rel="stylesheet" href="../SlashUploader/SlashUploader.min.css" type="text/css" />
 
 
 	<script src="demo.js"></script>
 	<link rel="stylesheet" href="demo.css">
 
-
+	<!--[if gte IE 9]><!-->
 	<!-- start manual cropper includes -->
 	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 	<link rel='stylesheet' type='text/css' media='screen' href='image_cropper/cropperjs-1.5.6/dist/cropper.min.css'>
@@ -26,6 +26,7 @@
 	<script src="image_cropper/image_cropper.js"></script>
 	<link rel="stylesheet" href="image_cropper/image_cropper.css">
 	<!-- end manual cropper includes -->
+	<!--<![endif]-->
 
 </head>
 
@@ -69,17 +70,6 @@
 				</td>
 				<td class="uploader_field_container">
 					<div id="uploader_no_metadata" class="uploader_field">
-					</div>
-				</td>
-				<td class="uploader_status">
-				</td>
-			</tr>
-			<tr>
-				<td class="uploader_title">
-					Without chunks upload
-				</td>
-				<td class="uploader_field_container">
-					<div id="uploader_no_chunks" class="uploader_field">
 					</div>
 				</td>
 				<td class="uploader_status">
@@ -168,18 +158,6 @@
 				</td>
 				<td class="uploader_field_container">
 					<div id="uploader_field_cross_domain" class="uploader_field">
-					</div>
-				</td>
-				<td class="uploader_status">
-					<div></div>
-				</td>
-			</tr>
-			<tr>
-				<td class="uploader_title">
-					Cross-Domain Script, No Chunks
-				</td>
-				<td class="uploader_field_container">
-					<div id="uploader_field_cross_domain_no_chunks" class="uploader_field">
 					</div>
 				</td>
 				<td class="uploader_status">
