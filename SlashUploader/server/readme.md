@@ -1,4 +1,4 @@
-# Server Script
+# Server Script (for Windows server)
 
 ## Web.config
 
