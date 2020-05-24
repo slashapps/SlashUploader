@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.7
+ * SlashUploader - JS plugin - Version 1.5.8
  * http://slashuploader.com/
  * Copyright (c) 2018-present Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
@@ -220,7 +220,7 @@ function SlashUploader(element, opts) {
 	this.onError = null;
 	this.customValidation = null;
 	this.customHTML = false;
-	this.uploadFileInChunks = true;
+	this.uploadTypePriority = ["stream", "chunks", "iframe"];
 	this.fileSizeToForceChunksUpload = 500000;
 	this.resetFilesOnEachUpload = true;
 	this.iframeGateway = "./SlashUploader/iframe_gateway.html";
@@ -233,9 +233,9 @@ function SlashUploader(element, opts) {
 	this.retryTimeout = 1500;
 
 	_variables.serverScripts = {
-		uploadChunk: "./SlashUploader/server/UploadFiles.aspx?method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&total_chunks={{total_chunks}}&request_id={{request_id}}&rotation={{rotation}}",
-		uploadStream: "./SlashUploader/server/UploadFiles.aspx?method=upload_stream&file_name={{file_name}}&rotation={{rotation}}",
-		uploadThroughIframe: "./SlashUploader/server/UploadFiles.aspx?method=upload_through_iframe&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}&rotation={{rotation}}",
+		uploadChunk: "./SlashUploader/server/UploadFiles.aspx?upload_method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&total_chunks={{total_chunks}}&request_id={{request_id}}&rotation={{rotation}}",
+		uploadStream: "./SlashUploader/server/UploadFiles.aspx?upload_method=upload_stream&file_name={{file_name}}&rotation={{rotation}}",
+		uploadThroughIframe: "./SlashUploader/server/UploadFiles.aspx?upload_method=upload_through_iframe&request_id={{request_id}}&iframe_gateway={{iframe_gateway}}&rotation={{rotation}}",
 		fileNameVariableName: "file_name",
 		fileUrlVariableName: "file_path",
 		errorVariableName: "error"
@@ -246,7 +246,8 @@ function SlashUploader(element, opts) {
 		invalidFileSize: "Invalid file size ({{file_name}})",
 		uploadFailed: "Failed to upload",
 		parseFailed: "Failed to parse result",
-		unspecifiedError: "Unspecified error"
+		unspecifiedError: "Unspecified error",
+		networkError: "Network error"
 	};
 
 
@@ -1157,11 +1158,22 @@ function SlashUploader(element, opts) {
 
 			var errors = instance._internalVariables.validateFiles();
 			if (errors.length == 0) {
-				if (typeof (instance.onFilesSelected) == "function") {
-					instance.onFilesSelected(instance._internalVariables.curUploadingFilesData);
-				}
 				instance._internalVariables.curUploadingFileIndex = 0;
 				instance._internalVariables.onFileProgress(0);
+
+				if (typeof (instance.onFilesSelected) == "function") {
+					if (instance.onFilesSelected.length > 1) {
+						instance.onFilesSelected(instance._internalVariables.curUploadingFilesData, function () {
+							instance._internalVariables.uploadFile();
+						});
+					} else {
+						instance.onFilesSelected(instance._internalVariables.curUploadingFilesData);
+						instance._internalVariables.uploadFile();
+					}
+				} else {
+					instance._internalVariables.uploadFile();
+				}
+				/*
 				if (typeof (instance.onBeforeFilesUpload) == "function") {
 					instance.onBeforeFilesUpload(instance._internalVariables.curUploadingFilesData, function () {
 						instance._internalVariables.uploadFile();
@@ -1169,6 +1181,7 @@ function SlashUploader(element, opts) {
 				} else {
 					instance._internalVariables.uploadFile();
 				}
+				*/
 			} else {
 				instance._internalVariables.parseErrors(errors);
 			}
@@ -1353,65 +1366,75 @@ function SlashUploader(element, opts) {
 
 			} else {
 
-				var roation = "";
-				var size = "";
-				var duration = "";
-				var width = "";
-				var height = "";
-				var extension = "";
-				for (var i = 0; i < instance._internalVariables.curUploadingFilesData.length; i++) {
-					roation += instance._internalVariables.curUploadingFilesData[i].rotation || "";
-					size += instance._internalVariables.curUploadingFilesData[i].size || "";
-					duration += instance._internalVariables.curUploadingFilesData[i].duration || "";
-					width += instance._internalVariables.curUploadingFilesData[i].width || "";
-					height += instance._internalVariables.curUploadingFilesData[i].height || "";
-					extension += instance._internalVariables.curUploadingFilesData[i].extension || "";
-					if (i < instance._internalVariables.curUploadingFilesData.length - 1) {
-						roation += ",";
-						size += ",";
-						duration += ",";
-						width += ",";
-						height += ",";
-						extension += ",";
-					}
-				}
-
-				script = instance.serverScripts.uploadThroughIframe;
-				script = script
-					.split("{{rotation}}").join(roation)
-					.split("{{size}}").join(size)
-					.split("{{duration}}").join(duration)
-					.split("{{width}}").join(width)
-					.split("{{height}}").join(height)
-					.split("{{extension}}").join(extension);
-				//script += "&_="+Math.random();
-
-				instance._internalVariables.onFileProgress(0);
-
-				uploaerIframeGateway.uploadViaIframeGateway(
-					instance.elements.elementId,
-					script,
-					instance._internalVariables.getIframeGatewayFullUrl(),
-					function (data) {
-						instance._internalVariables.curUploadingFileIndex = instance._internalVariables.totalFilesToUpload - 1;
-						instance._internalVariables.onFileProgress(1);
-						if (instance.elements.uploaderDropAreaBottomLayerElement == null) {
-							instance._internalVariables.parseUploadResult(data, true, null);
-						} else {
-							noJquery(instance.elements.uploaderDropAreaBottomLayerElement).animate({ opacity: 0 }, 200, function () {
-								instance._internalVariables.parseUploadResult(data, true, null);
-							});
-						}
-						noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).animate({ opacity: 0 }, 200, function () {
-						});
-
-					}
-				);
+				instance._internalVariables.uploadUsingIframe();
 
 			}
 
 
 		}
+
+	}
+
+	this._internalVariables.uploadUsingIframe = function () {
+
+		var instance = this.instance;
+
+		var roation = "";
+		var size = "";
+		var duration = "";
+		var width = "";
+		var height = "";
+		var extension = "";
+		for (var i = 0; i < instance._internalVariables.curUploadingFilesData.length; i++) {
+			roation += instance._internalVariables.curUploadingFilesData[i].rotation || "";
+			size += instance._internalVariables.curUploadingFilesData[i].size || "";
+			duration += instance._internalVariables.curUploadingFilesData[i].duration || "";
+			width += instance._internalVariables.curUploadingFilesData[i].width || "";
+			height += instance._internalVariables.curUploadingFilesData[i].height || "";
+			extension += instance._internalVariables.curUploadingFilesData[i].extension || "";
+			if (i < instance._internalVariables.curUploadingFilesData.length - 1) {
+				roation += ",";
+				size += ",";
+				duration += ",";
+				width += ",";
+				height += ",";
+				extension += ",";
+			}
+		}
+
+		var script = instance.serverScripts.uploadThroughIframe;
+		script = script
+			.split("{{rotation}}").join(roation)
+			.split("{{size}}").join(size)
+			.split("{{duration}}").join(duration)
+			.split("{{width}}").join(width)
+			.split("{{height}}").join(height)
+			.split("{{extension}}").join(extension);
+		//script += "&_="+Math.random();
+
+		instance._internalVariables.onFileProgress(0);
+
+		uploaerIframeGateway.uploadViaIframeGateway(
+			instance,
+			instance.elements.elementId,
+			script,
+			instance._internalVariables.getIframeGatewayFullUrl(),
+			function (data) {
+
+				instance._internalVariables.curUploadingFileIndex = instance._internalVariables.totalFilesToUpload - 1;
+				instance._internalVariables.onFileProgress(1);
+				if (instance.elements.uploaderDropAreaBottomLayerElement == null) {
+					instance._internalVariables.parseUploadResult(data, true, null);
+				} else {
+					noJquery(instance.elements.uploaderDropAreaBottomLayerElement).animate({ opacity: 0 }, 200, function () {
+						instance._internalVariables.parseUploadResult(data, true, null);
+					});
+				}
+				noJquery(instance.elements.uploaderDropAreaMiddleLayerElement).animate({ opacity: 0 }, 200, function () {
+				});
+
+			}
+		);
 
 	}
 
@@ -1446,17 +1469,21 @@ function SlashUploader(element, opts) {
 		instance._internalVariables.uploadXhr = xhr;
 		xhr.onload = function () {
 		};
-		xhr.onerror = function () {
+		xhr.onerror = function (err) {
 
+			// only triggers if the request couldn't be made at all
 			instance._internalVariables.uploadErrorCount++;
 			if (instance._internalVariables.uploadErrorCount < instance.retryTimes) {
 				setTimeout(function () {
 					instance._internalVariables.uploadFileChunk(file, uploaderId, blob, chunkIndex, start, end); // Retry to upload
 				}, instance.retryTimeout);
+			} else {
+				instance._internalVariables.uploadUsingIframe();
 			}
 
 		};
 		xhr.onreadystatechange = function (oEvent) {
+
 			if (xhr.readyState === 4) {
 				if (xhr.status === 200) {
 
@@ -1556,10 +1583,12 @@ function SlashUploader(element, opts) {
 						}, instance.retryTimeout);
 
 					} else {
-						var errors = [];
+
+						instance._internalVariables.uploadUsingIframe();
+						/*var errors = [];
 						errors.push({ error: 'upload_failed', file: file });
-						console.log("parseErrors 2");
-						instance._internalVariables.parseErrors(errors);
+						instance._internalVariables.parseErrors(errors);*/
+
 					}
 
 				}
@@ -1640,6 +1669,24 @@ function SlashUploader(element, opts) {
 		if (typeof (instance.onCanceled) == "function") {
 			instance.onCanceled();
 		}
+
+	}
+
+	this.destroy = function () {
+
+		var instance = this;
+		instance._internalVariables.abortAndCancelUpload();
+
+		if (!instance.customHTML) {
+			noJquery(instance.elements.containerElement).html("");
+		} else {
+			noJquery("#" + instance.elements.elementId).remove();
+		}
+		noJquery(instance.elements.containerElement).removeClass("slash_uploader");
+		noJquery(instance.elements.containerElement).removeAttr("data-show-uploaded-files");
+		noJquery(instance.elements.containerElement).removeAttr("data-file-progress");
+		noJquery("#" + instance.elements.elementId + "_form").remove();
+		// TODO: unbind all events
 
 	}
 
@@ -1846,7 +1893,6 @@ function SlashUploader(element, opts) {
 
 		}
 
-		console.log("showCurrentFiles 6");
 		instance._internalVariables.showCurrentFiles();
 
 	}
@@ -1873,6 +1919,8 @@ function SlashUploader(element, opts) {
 				curErrorText = instance.errors.invalidFileSize;
 			} else if (curError.error == "parse_failed" || (curError.error_object != null && curError.error_object.error == "parse_failed")) {
 				curErrorText = instance.errors.parseFailed;
+			} else if (curError.error == "network_error") {
+				curErrorText = instance.errors.networkError;
 			} else if (curError.error == "upload_failed") {
 
 				if (instance.showDetailedErrorFromServer && curError.error_object != null && curError.error_object.error != null && curError.error_object.error != "") {
@@ -1954,7 +2002,23 @@ function SlashUploader(element, opts) {
 	this._internalVariables.getUploadType = function () {
 
 		var instance = this.instance;
-		if (instance._internalVariables.canUploadFileInchunks()) {
+
+		if (instance.uploadTypePriority != null && instance.uploadTypePriority.length > 0) {
+			for (var i = 0; i < instance.uploadTypePriority.length; i++) {
+
+				if (instance.uploadTypePriority[i] == "stream" && instance._internalVariables.canUploadFileInStream()) {
+					return "stream";
+				} else if (instance.uploadTypePriority[i] == "chunks" && instance._internalVariables.canUploadFileInChunks()) {
+					return "chunks";
+				} else if (instance.uploadTypePriority[i] == "iframe" && instance._internalVariables.canUploadFileUsingIframe()) {
+					return "iframe";
+				}
+
+			}
+		}
+
+		// Default behaviour
+		if (instance._internalVariables.canUploadFileInStream()) {
 
 			var hasHeavyFiles = false;
 			if (instance._internalVariables.curUploadingFilesData != null && instance._internalVariables.curUploadingFilesData.length > 0) {
@@ -1965,34 +2029,67 @@ function SlashUploader(element, opts) {
 					}
 				}
 			}
-			if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream) || hasHeavyFiles) {
+			if (hasHeavyFiles && instance._internalVariables.canUploadFileInChunks()) {
 				return "chunks";
-			} else {
-				var edgeVersion = instance._internalVariables.getEdgeVersion();
-				if (edgeVersion > 0 && edgeVersion < 18) { // Edge 17 and below progress event isn't possible with Stream (https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12224510/)
-					return "chunks";
-				} else {
-					return "stream";
-				}
-
-			}
-
-		} else {
-			var ieVersion = instance._internalVariables.getIEVersion();
-			if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream)
-				|| (ieVersion >= 0 && ieVersion <= 9)) { // IE 9 and below
-				return "iframe";
 			} else {
 				return "stream";
 			}
+
+		} else if (instance._internalVariables.canUploadFileInChunks()) {
+
+			return "chunks";
+
+		} else {
+
+			return "iframe";
+
 		}
 
 	}
 
-	this._internalVariables.canUploadFileInchunks = function () {
+	/* // old 22/05/20
+		this._internalVariables.getUploadType = function () {
+	
+			var instance = this.instance;
+			if (instance._internalVariables.canUploadFileInChunks()) {
+	
+				var hasHeavyFiles = false;
+				if (instance._internalVariables.curUploadingFilesData != null && instance._internalVariables.curUploadingFilesData.length > 0) {
+					for (var i = 0; i < instance._internalVariables.curUploadingFilesData.length; i++) {
+						if (instance._internalVariables.curUploadingFilesData[i].size >= instance.fileSizeToForceChunksUpload) {
+							hasHeavyFiles = true;
+							break;
+						}
+					}
+				}
+				if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream) || hasHeavyFiles) {
+					return "chunks";
+				} else {
+					var edgeVersion = instance._internalVariables.getEdgeVersion();
+					if (edgeVersion > 0 && edgeVersion < 18) { // Edge 17 and below progress event isn't possible with Stream (https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12224510/)
+						return "chunks";
+					} else {
+						return "stream";
+					}
+	
+				}
+	
+			} else {
+				var ieVersion = instance._internalVariables.getIEVersion();
+				if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream)
+					|| (ieVersion >= 0 && ieVersion <= 9)) { // IE 9 and below
+					return "iframe";
+				} else {
+					return "stream";
+				}
+			}
+	
+		}
+	*/
+	this._internalVariables.canUploadFileInChunks = function () {
 
 		var instance = this.instance;
-		if (!instance.uploadFileInChunks) {
+		if (instance.serverScripts.uploadChunk == null || instance.serverScripts.uploadChunk == "") {
 			return false;
 		}
 		var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -2005,6 +2102,37 @@ function SlashUploader(element, opts) {
 			return false;
 		}
 		return true;
+
+	}
+
+	this._internalVariables.canUploadFileUsingIframe = function () {
+
+		var instance = this.instance;
+		if (instance.iframeGateway == null || instance.iframeGateway == ""
+			|| instance.serverScripts.uploadThroughIframe == null || instance.serverScripts.uploadThroughIframe == "") {
+			return false;
+		}
+		return true;
+
+	}
+
+	this._internalVariables.canUploadFileInStream = function () {
+
+		var instance = this.instance;
+		if (instance.serverScripts.uploadStream == null || instance.serverScripts.uploadStream == "") {
+			return false;
+		}
+		var edgeVersion = instance._internalVariables.getEdgeVersion();
+		var ieVersion = instance._internalVariables.getIEVersion();
+		if (edgeVersion > 0 && edgeVersion < 18) { // Edge 17 and below progress event isn't possible with Stream (https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/12224510/)
+			return false;
+		} else if (ieVersion >= 0 && ieVersion <= 9) {
+			return false;
+		} else if (instance._internalVariables.isCrossDomainScript(instance.serverScripts.uploadStream)) {
+			return false;
+		} else {
+			return true;
+		}
 
 	}
 
@@ -2023,9 +2151,18 @@ function SlashUploader(element, opts) {
 			} else {
 				domain = scriptToTest.split('/')[0];
 			}
+			if (domain.indexOf(":") != -1) {
+				var port = domain.split(':')[1];
+				if ((window.location.port == "" || window.location.port == "80" || window.location.port == "443") && (port == "" || port == "80" || port == "443")) {
+				} else {
+					if (port != window.location.port) {
+						return true;
+					}
+				}
+			}
 			domain = domain.split(':')[0];
 			if (domain.toLowerCase() != window.location.host.toLowerCase()) {
-				isCrossDomain = true;
+				return true;
 			}
 
 		}
@@ -2224,7 +2361,7 @@ var uploaerIframeGateway = {
 		}
 	},
 
-	uploadViaIframeGateway: function (formElementId, scriptUrl, iframeGatewayUrl, onCompleted) {
+	uploadViaIframeGateway: function (slashUploaderInstance, formElementId, scriptUrl, iframeGatewayUrl, onCompleted) {
 
 		var requestId = Math.floor(Math.random() * 999999999);
 		var iframeObj = new Object();
@@ -2236,7 +2373,14 @@ var uploaerIframeGateway = {
 		if (noJquery("#" + iframeId).get(0) == null) {
 			var iframeElement = "<iframe id='" + iframeId + "' data-request='" + requestId + "' name='" + iframeId + "' style='width: 1px; height: 1px; opacity: 0; display: none;'>";
 			noJquery(iframeElement).appendTo('body');
-
+			document.getElementById(iframeId).onload = function (e) {
+				setTimeout(function () {
+					if (slashUploaderInstance._internalVariables.isUploading) { // If current status is "uploading", and iframe got "onload" event, then there was probably an error
+						slashUploaderInstance._internalVariables.setError('network_error');
+						slashUploaderInstance._internalVariables.abortAndCancelUpload();
+					}
+				}, 500);
+			};
 		}
 
 		var formAction = scriptUrl;

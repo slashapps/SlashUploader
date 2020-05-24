@@ -1,66 +1,69 @@
 ﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
+
 <head>
 
-<script>
+    <script>
 
-function getQueryStringParams (queryStr) {
-	
-    var str = "?";
-    var obj = {};
-    var queryArr = queryStr.split("&");
-    for (var i=0; i<queryArr.length; i++) {
-        var key = queryArr[i].split("=")[0];
-        var val = queryArr[i].split("=")[1];
-        if (key != null && key != "") {
-            obj[key] = decodeURIComponent(val);
-        }
-    }
-    return obj;
-    
-}
+        function getQueryStringParams(queryStr) {
 
-function getQuerystringParamValue (param) {
-    var queryStr = window.location.search.substring(1);
-    var queryArr = queryStr.split("&");
-    for (var i=0; i<queryArr.length; i++) {
-        var key = queryArr[i].split("=")[0];
-        var val = queryArr[i].split("=")[1];
-        if (key == param) {
-            return val;
-        }
-    }
-    return "";
-}
-
-function iframeGateway () {
-	
-	var uploaderIndex = getQuerystringParamValue("request_id");
-    if (uploaderIndex != null && uploaderIndex != "") {
-        var data = decodeURIComponent(getQuerystringParamValue("data"));
-        try {
-            //var obj = $.parseJSON(decodeURIComponent(decodeURIComponent(data.replace(/\+/g,  " "))));
-            var obj = JSON.parse(decodeURIComponent(decodeURIComponent(data.replace(/\+/g,  " "))));
-            if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
-                window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted (uploaderIndex, obj);
+            var str = "?";
+            var obj = {};
+            var queryArr = queryStr.split("&");
+            for (var i = 0; i < queryArr.length; i++) {
+                var key = queryArr[i].split("=")[0];
+                var val = queryArr[i].split("=")[1];
+                if (key != null && key != "") {
+                    obj[key] = decodeURIComponent(val);
+                }
             }
-        } catch (e) {
-            var errors = [];
-            errors.push({error: 'parse_failed'});
-            if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
-                window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted (uploaderIndex, errors);
-            }
-            //instance._internalVariables.parseErrors(errors);
-        }
-    }
-	
-}
+            return obj;
 
-</script>
+        }
+
+        function getQuerystringParamValue(param) {
+            var queryStr = window.location.search.substring(1);
+            var queryArr = queryStr.split("&");
+            for (var i = 0; i < queryArr.length; i++) {
+                var key = queryArr[i].split("=")[0];
+                var val = queryArr[i].split("=")[1];
+                if (key == param) {
+                    return val;
+                }
+            }
+            return "";
+        }
+
+        function iframeGateway() {
+
+            var uploaderIndex = getQuerystringParamValue("request_id");
+            if (uploaderIndex != null && uploaderIndex != "") {
+                var data = decodeURIComponent(getQuerystringParamValue("data"));
+                try {
+                    //var obj = $.parseJSON(decodeURIComponent(decodeURIComponent(data.replace(/\+/g,  " "))));
+                    var obj = JSON.parse(decodeURIComponent(decodeURIComponent(data.replace(/\+/g, " "))));
+                    if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
+                        window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted(uploaderIndex, obj);
+                    }
+                } catch (e) {
+                    var errors = [];
+                    errors.push({ error: 'parse_failed' });
+                    if (window.parent.parent.uploaerIframeGateway.objs[uploaderIndex] != null) {
+                        window.parent.parent.uploaerIframeGateway.uploaderIframeActionCompleted(uploaderIndex, errors);
+                    }
+                    //instance._internalVariables.parseErrors(errors);
+                }
+            }
+
+        }
+
+    </script>
 </head>
+
 <body>
     <script>
-    	iframeGateway();
-    </script>  
+        iframeGateway();
+    </script>
 </body>
+
 </html>
