@@ -32,6 +32,7 @@ function FileData(file) {
 
 function SlashUploader(element, opts) {
 
+	this.version = "1.5.8";
 	this.opts = opts;
 	this._internalVariables = {};
 	this._internalVariables.instance = this;
@@ -212,7 +213,7 @@ function SlashUploader(element, opts) {
 	});
 
 	this.onFilesSelected = null;
-	this.onBeforeFilesUpload = null;
+	//this.onBeforeFilesUpload = null;
 	this.onFilesUploaded = null;
 	this.onFileDeleted = null;
 	this.onFilesProgress = null;
@@ -231,6 +232,7 @@ function SlashUploader(element, opts) {
 	this.displayErrorDuration = 4500;
 	this.retryTimes = 10;
 	this.retryTimeout = 1500;
+	this.status = "idle"; // idle / uploading / uploaded / canceled / error
 
 	_variables.serverScripts = {
 		uploadChunk: "./SlashUploader/server/UploadFiles.aspx?upload_method=upload_chunk&file_name={{file_name}}&chunk_index={{chunk_index}}&total_chunks={{total_chunks}}&request_id={{request_id}}&rotation={{rotation}}",
@@ -1242,6 +1244,7 @@ function SlashUploader(element, opts) {
 		noJquery(instance.elements.uploaderProgressBarTextElement).html(text);
 
 		instance._internalVariables.isUploading = true;
+		instance.status = "uploading";
 		instance._internalVariables.onFileProgress(0);
 		instance._internalVariables.setCancelButtonDisplay();
 		instance._internalVariables.setProgressDisplay();
@@ -1286,8 +1289,6 @@ function SlashUploader(element, opts) {
 		if (instance._internalVariables.getUploadType() == "chunks") {
 
 			var fileData = instance._internalVariables.curUploadingFilesData[fileIndex];
-			var fileName = fileData.name;
-			//var fileExtension = fileName.substr(fileName.lastIndexOf("."), 5);
 			var blob = files[fileIndex].file;
 			//var completed = 0;
 			var randomId = Math.floor(Math.random() * 999999999);
@@ -1319,7 +1320,7 @@ function SlashUploader(element, opts) {
 						if (isLastFile) {
 							instance._internalVariables.curUploadingFileIndex--;
 						}
-
+						
 						var jsonObj = JSON.parse(result);
 
 						function parseUploadResult() {
@@ -1351,7 +1352,7 @@ function SlashUploader(element, opts) {
 				}, false);
 
 				script = instance.serverScripts.uploadStream;
-				script = script.split("{{file_name}}").join(fileName);
+				script = script.split("{{file_name}}").join(encodeURIComponent(fileName));
 				script = instance._internalVariables.replaceFileDataParams(fileData, script);
 				//.split("{{rotation}}").join(fileData.rotation);
 				script += "&_=" + Math.random();
@@ -1595,7 +1596,7 @@ function SlashUploader(element, opts) {
 			}
 		};
 		var scriptToPost = script
-			.split("{{file_name}}").join(file.name)
+			.split("{{file_name}}").join(encodeURIComponent(file.name))
 			.split("{{chunk_index}}").join(chunkIndex)
 			.split("{{total_chunks}}").join(chunksCount)
 			.split("{{request_id}}").join(uploaderId);
@@ -1618,19 +1619,19 @@ function SlashUploader(element, opts) {
 			success: function(data) {
 
 				instance._internalVariables.curUploadingFileIndex ++;
-	            var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
-	            instance._internalVariables.parseUploadResult (data, isLastFile, file);
-	            if (!isLastFile && instance._internalVariables.curUploadingFilesData.length > 0) {
-	                instance._internalVariables.uploadFile ();
-	            }
-	        	instance._internalVariables.uploadXhr = null;
+				var isLastFile = (instance._internalVariables.curUploadingFilesData.length <= instance._internalVariables.curUploadingFileIndex) || (instance._internalVariables.curUploadingFileIndex >= instance.maxFiles);
+				instance._internalVariables.parseUploadResult (data, isLastFile, file);
+				if (!isLastFile && instance._internalVariables.curUploadingFilesData.length > 0) {
+					instance._internalVariables.uploadFile ();
+				}
+				instance._internalVariables.uploadXhr = null;
 			},
 			error: function(jqXHR, exception) {
 				if (exception === 'abort') {
 				} else {
 					instance._internalVariables.setError('upload_failed', file);
 				}
-	        	instance._internalVariables.uploadXhr = null;
+				instance._internalVariables.uploadXhr = null;
 			}
 		});
 
@@ -1698,7 +1699,16 @@ function SlashUploader(element, opts) {
 			instance._internalVariables.uploadXhr.abort();
 			instance._internalVariables.uploadXhr = null;
 		}
+
+		// TODO: Cancel all "onload" and timeouts of this._internalVariables.getNextFileMetadata
+		// Can be seen when using this:
+		//onFilesSelected: function (files, continueUpload) {
+		//	console.log("selected", files);
+		//	this.cancelUpload();
+		//},
+
 		instance._internalVariables.isUploading = false;
+		instance.status = "canceled";
 		instance._internalVariables.showUploadBtn();
 		if (instance._internalVariables.getUploadType() == "iframe") {
 			uploaerIframeGateway.cancelUpload(instance.elements.elementId, instance._internalVariables.getIframeGatewayFullUrl());
@@ -1716,6 +1726,7 @@ function SlashUploader(element, opts) {
 
 		var instance = this.instance;
 		var hasError = false;
+
 
 		if (Array.isArray(result)) {
 
@@ -1763,6 +1774,7 @@ function SlashUploader(element, opts) {
 		if (isLastFile && !hasError) {
 
 			instance._internalVariables.isUploading = false;
+			instance.status = "uploaded";
 			if (typeof (instance.onFilesUploaded) == "function") {
 				instance.onFilesUploaded(instance.uploadedFiles);
 			}
@@ -1951,6 +1963,7 @@ function SlashUploader(element, opts) {
 		noJquery(instance.elements.uploaderResultElement).html(errorStr).css("opacity", "0").fadeIn();
 
 		instance._internalVariables.abortAndCancelUpload();
+		instance.status = "error";
 		if (typeof (instance.onError) == "function") {
 			instance.onError(errors);
 		}
@@ -1991,9 +2004,9 @@ function SlashUploader(element, opts) {
 
 		if (typeof (console) != "undefined") {
 			if (isIE11 || isIE) {
-				console.warn("Uploader: " + errorText);
+				console.warn("SlashUploader: " + errorText);
 			} else {
-				console.log("%c Uploader: " + errorText, 'background: #222; color: #bada55; padding: 10px;');
+				console.log("%c SlashUploader: " + errorText, 'background: #222; color: #bada55; padding: 10px;');
 			}
 		}
 
@@ -2939,10 +2952,10 @@ if (typeof Array.isArray !== 'function') {
 if (!Object.defineProperty ||
 	!(function () { try { Object.defineProperty({}, 'x', {}); return true; } catch (e) { return false; } }())) {
 	Object.defineProperty = function defineProperty(object, property, descriptor) {
-        /*descriptor._internalVariables = {
-        	setVariable: function () {
-        	}
-        };*/
+		/*descriptor._internalVariables = {
+			setVariable: function () {
+			}
+		};*/
 		if ('get' in descriptor) {
 			if (typeof (descriptor.get) == "function") {
 				var returnValue = descriptor.get();
