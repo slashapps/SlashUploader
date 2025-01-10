@@ -1,4 +1,5 @@
 ﻿<%@ Page Language="C#" ContentType="text/html" Debug="True" %>
+
 <%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Drawing" %>
 <%@ Import Namespace="System.Drawing.Drawing2D" %>
@@ -55,25 +56,35 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
     public static void StartUpload(string FileFolder, bool DoOverwriteFilename, bool SaveFileWithGuidFilename, String[] AllowedFilesTypes)
     {
-        try {
+        try
+        {
 
             string GeneralError = GetGeneralError(FileFolder, AllowedFilesTypes);
-            if (!string.IsNullOrEmpty(GeneralError)) {
+            if (!string.IsNullOrEmpty(GeneralError))
+            {
                 ResponseError(GeneralError);
             }
-            else {
+            else
+            {
                 System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
                 string Method = PageInstance.Request[MethodParamName];
-                if (Method == "upload_chunk") {
+                if (Method == "upload_chunk")
+                {
                     UploadChunk(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-                } else if (Method == "upload_through_iframe") {
+                }
+                else if (Method == "upload_through_iframe")
+                {
                     UploadThroughIframe(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-                } else if (Method == "upload_stream") {
+                }
+                else if (Method == "upload_stream")
+                {
                     UploadStream(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
                 }
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             ResponseError(e);
         }
     }
@@ -109,11 +120,15 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         int.TryParse(ChunkIndex, out ChunkIndexInt);
         int TotalChunksInt = -1;
         int.TryParse(TotalChunks, out TotalChunksInt);
-        if (ChunkIndexInt >= 0 && TotalChunksInt > 0) {
+        if (ChunkIndexInt >= 0 && TotalChunksInt > 0)
+        {
             string Folder = UploadFileChunk(FileName, FileFolder, RequestId, ChunkIndex);
-            if (ChunkIndexInt + 1 == TotalChunksInt) {
+            if (ChunkIndexInt + 1 == TotalChunksInt)
+            {
                 CombineChunks(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename);
-            } else {
+            }
+            else
+            {
                 PageInstance.Response.Write(GetJsonResponse(@"{""success"": ""1""}"));
             }
         }
@@ -129,19 +144,23 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         int RotationInt = 0;
         string FilesReturnStr = "";
         string[] Rotations = null;
-        if (!string.IsNullOrEmpty(Rotation)) {
+        if (!string.IsNullOrEmpty(Rotation))
+        {
             Rotations = Rotation.Split(new string[] { "," }, StringSplitOptions.None);
         }
-        for (int i = 0; i < PageInstance.Request.Files.Count; i++) {
+        for (int i = 0; i < PageInstance.Request.Files.Count; i++)
+        {
             RotationInt = 0;
-            if (Rotations != null && Rotations.Length > i) {
+            if (Rotations != null && Rotations.Length > i)
+            {
                 int.TryParse(Rotations[i], out RotationInt);
             }
             NameValueCollection UploadedResult = UploadPostedFile(FileName, FileFolder, i, RotationInt, DoOverwriteFilename, SaveFileWithGuidFilename);
             UploadedResult = ProcessUploadedFile(FileFolder, UploadedResult);
             string FileDataJson = GetFileJson(UploadedResult);
             FilesReturnStr += FileDataJson;
-            if (i < PageInstance.Request.Files.Count - 1) {
+            if (i < PageInstance.Request.Files.Count - 1)
+            {
                 FilesReturnStr += ",";
             }
         }
@@ -167,14 +186,17 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
         string FileName = PageInstance.Request[FileNameParamName];
         bool FileTypeIsValid = true;
-        if (!string.IsNullOrEmpty(FileName) && !IsFileTypeValid(FileName, AllowedFilesTypes)) {
+        if (!string.IsNullOrEmpty(FileName) && !IsFileTypeValid(FileName, AllowedFilesTypes))
+        {
             FileTypeIsValid = false;
         }
-        if (PageInstance.Request.Files != null) {
+        if (PageInstance.Request.Files != null)
+        {
             for (int i = 0; i < PageInstance.Request.Files.Count; i++)
             {
                 HttpPostedFile PostedFile = PageInstance.Request.Files[i];
-                if (!IsFileTypeValid(PostedFile.FileName, AllowedFilesTypes)) {
+                if (!IsFileTypeValid(PostedFile.FileName, AllowedFilesTypes))
+                {
                     FileTypeIsValid = false;
                 }
             }
@@ -188,7 +210,8 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
         ImageCropper Cropper = new ImageCropper();
         ImageCropper.ScaleMode.TryParse(PageInstance.Request[ResizeTypeParamName], out Cropper.ResizeType);
-        if (Cropper.ResizeType != ImageCropper.ScaleMode.None) {
+        if (Cropper.ResizeType != ImageCropper.ScaleMode.None)
+        {
             Cropper.OutputWidth = Convert.ToInt32(PageInstance.Request[ResizeOutputWidthParamName]);
             Cropper.OutputHeight = Convert.ToInt32(PageInstance.Request[ResizeOutputHeightParamName]);
             Cropper.FileToCropPath = PageInstance.Server.MapPath(FileFolder + UploadedFile[ReturnFileNameParamName]);
@@ -199,7 +222,9 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
             ReturnObj[ReturnFileNameParamName] = NewFileName;
             ReturnObj[ReturnFilePathParamName] = GetFileUrl(NewFileName, FileFolder);
             return ReturnObj;
-        } else {
+        }
+        else
+        {
             return UploadedFile;
         }
 
@@ -210,31 +235,38 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
     //  Functions
     //
 
-    public static string GetJsonResponse(string FileDataJson) {
+    public static string GetJsonResponse(string FileDataJson)
+    {
 
         string ReturnStr = "";
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
         string JsonCallback = "";
-        if (PageInstance.Request["callback"] != null && PageInstance.Request["callback"] != "") {
+        if (PageInstance.Request["callback"] != null && PageInstance.Request["callback"] != "")
+        {
             JsonCallback = PageInstance.Request["callback"];
         }
-        if (PageInstance.Request["jsoncallback"] != null && PageInstance.Request["jsoncallback"] != "") {
+        if (PageInstance.Request["jsoncallback"] != null && PageInstance.Request["jsoncallback"] != "")
+        {
             JsonCallback = PageInstance.Request["jsoncallback"];
         }
-        if (JsonCallback != null && JsonCallback != "") {
+        if (JsonCallback != null && JsonCallback != "")
+        {
             ReturnStr += JsonCallback + "(";
         }
-        if (!string.IsNullOrEmpty(FileDataJson)) {
+        if (!string.IsNullOrEmpty(FileDataJson))
+        {
             ReturnStr += "[" + FileDataJson + "]";
         }
-        if (JsonCallback != null && JsonCallback != "") {
+        if (JsonCallback != null && JsonCallback != "")
+        {
             ReturnStr += ")";
         }
         return ReturnStr;
 
     }
 
-    public static string GetIframeResponse(string IframeGateway, string RequestId, string DataJson) {
+    public static string GetIframeResponse(string IframeGateway, string RequestId, string DataJson)
+    {
 
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
         string ReturnStr = "<html><body><iframe src='" + IframeGateway + "?" + RequestIdParamName + "=" + RequestId + "&data=" + PageInstance.Server.UrlEncode("[" + DataJson + "]") + "' id='gateway_iframe' style='width: 1px; height: 1px; opacity: 0; display: none;'></iframe></body></html>"; // TODO: Try it
@@ -242,27 +274,31 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
     }
 
-    public static string GetFileJson(NameValueCollection FileObject) {
+    public static string GetFileJson(NameValueCollection FileObject)
+    {
 
         string FileJson = @"{
-        """+ReturnFileNameParamName+@""": """+FileObject[ReturnFileNameParamName]+@""",
-            """+ReturnFilePathParamName+@""": """+FileObject[ReturnFilePathParamName]+@""",
-                """+ReturnErrorParamName+@""": """+FileObject[ReturnErrorParamName]+@"""
+        """ + ReturnFileNameParamName + @""": """ + FileObject[ReturnFileNameParamName] + @""",
+            """ + ReturnFilePathParamName + @""": """ + FileObject[ReturnFilePathParamName] + @""",
+                """ + ReturnErrorParamName + @""": """ + FileObject[ReturnErrorParamName] + @"""
     } ";
-    return FileJson;
+        return FileJson;
 
     }
 
     public static string GetGeneralError(string FileFolder, String[] AllowedFilesTypes)
     {
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-        if (!ValidateFilesTypes(AllowedFilesTypes)) {
+        if (!ValidateFilesTypes(AllowedFilesTypes))
+        {
             return "File type is not allowed. The only allowed file types to upload are images, media, plain text and documents.";
         }
-        else if (!Directory.Exists(PageInstance.Server.MapPath(FileFolder))) {
+        else if (!Directory.Exists(PageInstance.Server.MapPath(FileFolder)))
+        {
             return "Directory '" + PageInstance.Server.MapPath(FileFolder) + "' doesn't exist.";
         }
-        else if (!DirectoryHasWritePermission(PageInstance.Server.MapPath(FileFolder))) {
+        else if (!DirectoryHasWritePermission(PageInstance.Server.MapPath(FileFolder)))
+        {
             return "Directory '" + PageInstance.Server.MapPath(FileFolder) + "' doesn't have write permissions.";
         }
         return null;
@@ -273,24 +309,30 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         var AllowWrite = false;
         var DenyWrite = false;
         var AccessControlList = Directory.GetAccessControl(DirectoryPath);
-        if (AccessControlList == null) {
+        if (AccessControlList == null)
+        {
             return false;
         }
-        var AccessRules = AccessControlList.GetAccessRules(true, true, typeof (System.Security.Principal.NTAccount));
-        if (AccessRules == null) {
+        var AccessRules = AccessControlList.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+        if (AccessRules == null)
+        {
             return false;
         }
         WindowsIdentity CurrentUser = WindowsIdentity.GetCurrent();
         WindowsPrincipal Principal = new WindowsPrincipal(CurrentUser);
-        foreach(FileSystemAccessRule CurRule in AccessRules)
+        foreach (FileSystemAccessRule CurRule in AccessRules)
         {
             NTAccount CurNtAccount = CurRule.IdentityReference as NTAccount;
-            if (CurNtAccount != null && (CurRule.FileSystemRights & FileSystemRights.Write) > 0) {
-                if (Principal.IsInRole(CurNtAccount.Value)) {
-                    if (CurRule.AccessControlType == AccessControlType.Allow) {
+            if (CurNtAccount != null && (CurRule.FileSystemRights & FileSystemRights.Write) > 0)
+            {
+                if (Principal.IsInRole(CurNtAccount.Value))
+                {
+                    if (CurRule.AccessControlType == AccessControlType.Allow)
+                    {
                         AllowWrite = true;
                     }
-                    else if (CurRule.AccessControlType == AccessControlType.Deny) {
+                    else if (CurRule.AccessControlType == AccessControlType.Deny)
+                    {
                         DenyWrite = true;
                     }
                 }
@@ -312,27 +354,33 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         ErrorResult[ReturnErrorParamName] = ParseJsonStringValue(ErrorString);
         string ErrorJson = GetFileJson(ErrorResult);
         string Method = PageInstance.Request[MethodParamName];
-        if (Method == "upload_through_iframe") {
+        if (Method == "upload_through_iframe")
+        {
             string IframeGateway = PageInstance.Request[IframeGatewayparamName];
             string RequestId = PageInstance.Request[RequestIdParamName];
             PageInstance.Response.Write(GetIframeResponse(IframeGateway, RequestId, ErrorJson));
-        } else {
+        }
+        else
+        {
             PageInstance.Response.Write(GetJsonResponse(ErrorJson));
         }
     }
 
-    public static string UploadFileChunk(string FileName, string FileFolder, string RequestId, string ChunkIndex) {
+    public static string UploadFileChunk(string FileName, string FileFolder, string RequestId, string ChunkIndex)
+    {
 
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
         string FolderName = "temp_" + FileName + "_" + RequestId;
-        if (!Directory.Exists(PageInstance.Server.MapPath(FileFolder + FolderName + "/"))) {
+        if (!Directory.Exists(PageInstance.Server.MapPath(FileFolder + FolderName + "/")))
+        {
             Directory.CreateDirectory(PageInstance.Server.MapPath(FileFolder + FolderName + "/"));
         }
         string FilePath = PageInstance.Server.MapPath(FileFolder + FolderName + "/");
         int ChunkIndexInt = 0;
         int.TryParse(ChunkIndex, out ChunkIndexInt);
         string ChunkIndexStr = ChunkIndexInt.ToString();
-        while (ChunkIndexStr.Length < 40) {
+        while (ChunkIndexStr.Length < 40)
+        {
             ChunkIndexStr = "0" + ChunkIndexStr;
         }
         string NewFilePath = Path.Combine(FilePath, ChunkIndexStr);
@@ -362,10 +410,12 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         string TempFileName = GetGuidFileName(FileName);
         string NewFilePath = Path.Combine(PageInstance.Server.MapPath(FileFolder), TempFileName);
         string[] FilePaths = Directory.GetFiles(FilePath);
-        foreach(string Item in FilePaths) {
+        foreach (string Item in FilePaths)
+        {
             MergeFileChunks(NewFilePath, Item);
         }
-        if (Rotation > 0) {
+        if (Rotation > 0)
+        {
             RotateImage(TempFileName, FileFolder, TempFileName, FileFolder, Rotation);
         }
         Directory.Delete(PageInstance.Server.MapPath(FileFolder + FolderName + "/"));
@@ -382,31 +432,39 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
     {
         FileStream Fs1 = null;
         FileStream Fs2 = null;
-        try {
+        try
+        {
             Fs1 = System.IO.File.Open(File1, FileMode.Append);
             Fs2 = System.IO.File.Open(File2, FileMode.Open);
             byte[] Fs2Content = new byte[Fs2.Length];
             Fs2.Read(Fs2Content, 0, (int)Fs2.Length);
             Fs1.Write(Fs2Content, 0, (int)Fs2.Length);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             //Console.WriteLine(ex.Message + " : " + ex.StackTrace);
-        } finally {
+        }
+        finally
+        {
             Fs1.Close();
             Fs2.Close();
             System.IO.File.Delete(File2);
         }
     }
 
-    private static NameValueCollection SaveFileFromStreamData(string FileName, string FileFolder, int Rotation, bool DoOverwrite, bool SaveFileWithGuidFilename) {
+    private static NameValueCollection SaveFileFromStreamData(string FileName, string FileFolder, int Rotation, bool DoOverwrite, bool SaveFileWithGuidFilename)
+    {
 
         NameValueCollection ReturnObj = new NameValueCollection();
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
         byte[] FileData = PageInstance.Request.BinaryRead(PageInstance.Request.TotalBytes);
         string TempFileName = GetGuidFileName(FileName);
-        if (FileData.Length >= 0) {
+        if (FileData.Length >= 0)
+        {
             File.WriteAllBytes(PageInstance.Server.MapPath(FileFolder) + TempFileName, FileData);
             string Extension = GetFileExtension(FileName).ToLower();
-            if ((Rotation != 0) && (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp")) {
+            if ((Rotation != 0) && (Extension == "jpg" || Extension == "png" || Extension == "jpeg" || Extension == "bmp"))
+            {
                 RotateImage(TempFileName, FileFolder, TempFileName, FileFolder, Rotation);
             }
             string FileNameToSave = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
@@ -414,29 +472,35 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
             ReturnObj[ReturnFileNameParamName] = FileNameToSave;
             ReturnObj[ReturnFilePathParamName] = GetFileUrl(FileNameToSave, FileFolder);
 
-        } else {
+        }
+        else
+        {
             ReturnObj[ReturnErrorParamName] = "No stream data";
         }
 
         return ReturnObj;
     }
 
-    private static NameValueCollection UploadPostedFile(string FileName, string FileFolder, int FileIndex, int Rotation, bool DoOverwrite, bool SaveFileWithGuidFilename) {
+    private static NameValueCollection UploadPostedFile(string FileName, string FileFolder, int FileIndex, int Rotation, bool DoOverwrite, bool SaveFileWithGuidFilename)
+    {
 
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
         HttpFileCollection Files = PageInstance.Request.Files;
         NameValueCollection ReturnObj = new NameValueCollection();
 
-        if (Files.Count > FileIndex) {
+        if (Files.Count > FileIndex)
+        {
 
             HttpPostedFile PostedFile = Files[FileIndex];
-            if (String.IsNullOrEmpty(FileName)) {
+            if (String.IsNullOrEmpty(FileName))
+            {
                 FileName = PostedFile.FileName;
             }
             string TempFileName = GetGuidFileName(FileName);
             string SaveLocation = PageInstance.Server.MapPath(FileFolder) + TempFileName;
             PostedFile.SaveAs(SaveLocation);
-            if (Rotation > 0) {
+            if (Rotation > 0)
+            {
                 RotateImage(TempFileName, FileFolder, TempFileName, FileFolder, Rotation);
             }
             string FileNameToSave = ParseFileName(FileName, FileFolder, DoOverwrite, SaveFileWithGuidFilename);
@@ -444,7 +508,9 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
             ReturnObj[ReturnFileNameParamName] = FileNameToSave;
             ReturnObj[ReturnFilePathParamName] = GetFileUrl(FileNameToSave, FileFolder);
 
-        } else {
+        }
+        else
+        {
             ReturnObj[ReturnErrorParamName] = "File was not found";
         }
         return ReturnObj;
@@ -453,11 +519,13 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
     private static string GetGuidFileName(string FileName)
     {
         string Extension = "";
-        if (FileName.LastIndexOf(".") != -1) {
+        if (FileName.LastIndexOf(".") != -1)
+        {
             Extension = FileName.Substring(FileName.LastIndexOf("."), FileName.Length - FileName.LastIndexOf("."));
         }
         FileName = GetGuid();
-        if (!string.IsNullOrEmpty(Extension)) {
+        if (!string.IsNullOrEmpty(Extension))
+        {
             FileName += Extension;
         }
         return FileName;
@@ -466,10 +534,12 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
     private static string ParseFileName(string FileName, string FileFolder, bool DoOverwrite, bool SaveFileWithGuidFilename)
     {
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-        if (!Directory.Exists(PageInstance.Server.MapPath(FileFolder))) {
+        if (!Directory.Exists(PageInstance.Server.MapPath(FileFolder)))
+        {
             Directory.CreateDirectory(PageInstance.Server.MapPath(FileFolder));
         }
-        if (SaveFileWithGuidFilename) {
+        if (SaveFileWithGuidFilename)
+        {
             FileName = GetGuidFileName(FileName);
         }
         FileName = FileName.Replace("/", "")
@@ -499,35 +569,47 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
         }
 
 
-        if (string.IsNullOrEmpty(FileName)) {
+        if (string.IsNullOrEmpty(FileName))
+        {
             FileName = GetGuid();
-        } else if (FileName.StartsWith(".") && FileName.Split('.').Length <= 2) {
+        }
+        else if (FileName.StartsWith(".") && FileName.Split('.').Length <= 2)
+        {
             FileName = GetGuid() + FileName;
         }
-        if (!DoOverwrite) {
+        if (!DoOverwrite)
+        {
             FileName = GetNonOverwrittenFileName(FileName, FileFolder);
         }
         return FileName;
 
     }
 
-    public static string GetFilePath(string Filename, string FileDir) {
+    public static string GetFilePath(string Filename, string FileDir)
+    {
         System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-        if (PageInstance == null) {
+        if (PageInstance == null)
+        {
             return FileDir + Filename;
-        } else {
+        }
+        else
+        {
             return PageInstance.Server.MapPath(FileDir) + Filename;
         }
     }
 
-    public static string GetNonOverwrittenFileName(string FileName, string FileFolder) {
+    public static string GetNonOverwrittenFileName(string FileName, string FileFolder)
+    {
 
-        try {
+        try
+        {
 
             System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
             string FilesNumberingType = "parenthesis";
-            if (PageInstance.Request.Browser.Type.ToUpper().Contains("IE")) {
-                if (PageInstance.Request.Browser.MajorVersion <= 9) {
+            if (PageInstance.Request.Browser.Type.ToUpper().Contains("IE"))
+            {
+                if (PageInstance.Request.Browser.MajorVersion <= 9)
+                {
                     FileName = FileName
                         .Replace("(", "-")
                         .Replace(")", "-");
@@ -537,108 +619,145 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
             string Extension = "";
             string CurFileName = FileName;
-            if (FileName.LastIndexOf(".") != -1) {
+            if (FileName.LastIndexOf(".") != -1)
+            {
                 Extension = FileName.Substring(FileName.LastIndexOf("."), FileName.Length - FileName.LastIndexOf("."));
                 CurFileName = FileName.Substring(0, FileName.LastIndexOf("."));
             }
             int CurNum = 0;
-            while (System.IO.File.Exists(GetFilePath(FileName, FileFolder))) {
+            while (System.IO.File.Exists(GetFilePath(FileName, FileFolder)))
+            {
                 CurNum++;
-                if (FilesNumberingType == "parenthesis") {
+                if (FilesNumberingType == "parenthesis")
+                {
                     FileName = CurFileName + "(" + Convert.ToString(CurNum) + ")" + Extension;
-                } else {
+                }
+                else
+                {
                     FileName = CurFileName + "_" + Convert.ToString(CurNum) + Extension;
                 }
             }
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
         }
         return FileName;
 
     }
 
-    public static string GetFileExtension(string FileName) {
+    public static string GetFileExtension(string FileName)
+    {
 
-        if (FileName != null) {
-            if (FileName.LastIndexOf(".") != -1) {
+        if (FileName != null)
+        {
+            if (FileName.LastIndexOf(".") != -1)
+            {
                 string ReturnStr = FileName.Substring(FileName.LastIndexOf(".") + 1, FileName.Length - FileName.LastIndexOf(".") - 1);
                 return ReturnStr.ToLower();
-            } else {
+            }
+            else
+            {
                 return "";
             }
-        } else {
+        }
+        else
+        {
             return "";
         }
 
     }
 
-    public static System.Drawing.Imaging.ImageFormat GetImageFormatByFileExtension(string FileName) {
-        try {
+    public static System.Drawing.Imaging.ImageFormat GetImageFormatByFileExtension(string FileName)
+    {
+        try
+        {
             System.Drawing.Imaging.ImageFormat ImgFormat = System.Drawing.Imaging.ImageFormat.Png;
             string Extens = GetFileExtension(FileName);
-            if (Extens == "jpg" || Extens == "jpeg") {
+            if (Extens == "jpg" || Extens == "jpeg")
+            {
                 ImgFormat = System.Drawing.Imaging.ImageFormat.Jpeg;
-            } else if (Extens == "bmp") {
+            }
+            else if (Extens == "bmp")
+            {
                 ImgFormat = System.Drawing.Imaging.ImageFormat.Bmp;
             }
             return ImgFormat;
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
         }
         return null;
     }
 
-    private static void RotateImage(string FileToRotateName, string FileToRotateFolder, string NewFileName, string NewFileFolder, int Rotation) {
-        try {
+    private static void RotateImage(string FileToRotateName, string FileToRotateFolder, string NewFileName, string NewFileFolder, int Rotation)
+    {
+        try
+        {
 
             System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-            NewFileName = ParseFileName(NewFileName, NewFileFolder, true, false);
-            string DestanationImg = PageInstance.Server.MapPath(NewFileFolder + NewFileName);
-            System.Drawing.Image Image = System.Drawing.Image.FromFile(PageInstance.Server.MapPath(FileToRotateFolder) + Convert.ToString(FileToRotateName));
+            ImageCropper.ScaleMode CurScaleMode = ImageCropper.ScaleMode.None;
+            ImageCropper.ScaleMode.TryParse(PageInstance.Request[ResizeTypeParamName], out CurScaleMode);
+            if (CurScaleMode != ImageCropper.ScaleMode.Manual)
+            {
+                NewFileName = ParseFileName(NewFileName, NewFileFolder, true, false);
+                string DestanationImg = PageInstance.Server.MapPath(NewFileFolder + NewFileName);
+                System.Drawing.Image Image = System.Drawing.Image.FromFile(PageInstance.Server.MapPath(FileToRotateFolder) + Convert.ToString(FileToRotateName));
 
-            GraphicsPath Path = new GraphicsPath();
-            Path.AddRectangle(new RectangleF(0f, 0f, Image.Width, Image.Height));
-            Matrix Mtrx = new Matrix();
-            Mtrx.Rotate(Rotation);
-            RectangleF Rct = Path.GetBounds(Mtrx);
+                GraphicsPath Path = new GraphicsPath();
+                Path.AddRectangle(new RectangleF(0f, 0f, Image.Width, Image.Height));
+                Matrix Mtrx = new Matrix();
+                Mtrx.Rotate(Rotation);
+                RectangleF Rct = Path.GetBounds(Mtrx);
 
-            Bitmap Bmp = new Bitmap(Convert.ToInt32(Rct.Width), Convert.ToInt32(Rct.Height));
+                Bitmap Bmp = new Bitmap(Convert.ToInt32(Rct.Width), Convert.ToInt32(Rct.Height));
 
-            System.Drawing.Graphics Gr = System.Drawing.Graphics.FromImage(Bmp);
-            Gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            Gr.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            Gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                System.Drawing.Graphics Gr = System.Drawing.Graphics.FromImage(Bmp);
+                Gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                Gr.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                Gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
-            Gr.TranslateTransform(-Rct.X, -Rct.Y);
-            Gr.RotateTransform(Rotation);
+                Gr.TranslateTransform(-Rct.X, -Rct.Y);
+                Gr.RotateTransform(Rotation);
 
-            System.Drawing.Rectangle RectDestination = new System.Drawing.Rectangle(0, 0, Convert.ToInt32(Gr.VisibleClipBounds.Width), Convert.ToInt32(Gr.VisibleClipBounds.Height));
-            Gr.DrawImage(Image, RectDestination, 0, 0, Convert.ToInt32(Gr.VisibleClipBounds.Width), Convert.ToInt32(Gr.VisibleClipBounds.Height), GraphicsUnit.Pixel);
+                System.Drawing.Rectangle RectDestination = new System.Drawing.Rectangle(0, 0, Convert.ToInt32(Gr.VisibleClipBounds.Width), Convert.ToInt32(Gr.VisibleClipBounds.Height));
+                Gr.DrawImage(Image, RectDestination, 0, 0, Convert.ToInt32(Gr.VisibleClipBounds.Width), Convert.ToInt32(Gr.VisibleClipBounds.Height), GraphicsUnit.Pixel);
 
-            Image.Dispose();
-            if (System.IO.File.Exists(DestanationImg)) {
-                System.IO.File.Delete(DestanationImg);
+                Image.Dispose();
+                if (System.IO.File.Exists(DestanationImg))
+                {
+                    System.IO.File.Delete(DestanationImg);
+                }
+                Bmp.Save(DestanationImg, GetImageFormatByFileExtension(NewFileName));
+                Bmp.Dispose();
             }
-            Bmp.Save(DestanationImg, GetImageFormatByFileExtension(NewFileName));
-            Bmp.Dispose();
 
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
         }
     }
 
-    public static string GetFileUrl(string FileName, string fileDir) {
-        try {
+    public static string GetFileUrl(string FileName, string fileDir)
+    {
+        try
+        {
             System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-            if (PageInstance == null) {
+            if (PageInstance == null)
+            {
                 return null;
             }
             string Str = "//" + PageInstance.Request.ServerVariables["SERVER_NAME"] + (new System.Web.UI.Control()).ResolveUrl(fileDir) + FileName;
             return Str;
-        } catch (Exception) {
+        }
+        catch (Exception)
+        {
         }
         return null;
     }
 
-    private static string ParseJsonStringValue(string Str) {
+    private static string ParseJsonStringValue(string Str)
+    {
 
         Str = Str.Replace(Convert.ToString(Convert.ToChar(8232)), "\n");
         Str = Str.Replace(Convert.ToString(Convert.ToChar(8233)), "\n");
@@ -647,22 +766,27 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
     }
 
-    public static string GetGuid() {
+    public static string GetGuid()
+    {
         return (Guid.NewGuid().ToString());
     }
 
     public static bool IsFileTypeValid(string FileName, String[] AllowedFilesTypes)
     {
         string Extension = GetFileExtension(FileName).ToLower();
-        if (!string.IsNullOrEmpty(Extension) && Array.IndexOf(AllowedFilesTypes, Extension) >= 0) {
+        if (!string.IsNullOrEmpty(Extension) && Array.IndexOf(AllowedFilesTypes, Extension) >= 0)
+        {
             return true;
-        } else {
+        }
+        else
+        {
             return false;
         }
     }
 
 
-    public class ImageCropper {
+    public class ImageCropper
+    {
 
         public string FileToCropPath = "";
         public string NewFileToSavePath = "";
@@ -689,7 +813,7 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
         public enum ScaleMode
         {
-        None = 0,
+            None = 0,
             ProportionalInside = 1,
             ProportionalOutside = 2,
             ProportionalCropOutsideTopLeft = 3,
@@ -703,256 +827,297 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
             ProportionalCropOutsideBottomRight = 11,
             Stretch = 14,
             Manual = 20
-    };
+        };
 
         public void PopulateInstanceVariablesFromRequestParams()
-    {
-        System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropXParamName]), out ManualCropPositionX);
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropYParamName]), out ManualCropPositionY);
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropWidthParamName]), out ManualCropWidth);
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropHeightParamName]), out ManualCropHeight);
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropRotateParamName]), out ManualCropRotate);
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropScaleXParamName]), out ManualCropScaleX);
-        float.TryParse(Convert.ToString(PageInstance.Request[ManualCropScaleYParamName]), out ManualCropScaleY);
-    }
+        {
+            System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropXParamName]), out ManualCropPositionX);
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropYParamName]), out ManualCropPositionY);
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropWidthParamName]), out ManualCropWidth);
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropHeightParamName]), out ManualCropHeight);
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropRotateParamName]), out ManualCropRotate);
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropScaleXParamName]), out ManualCropScaleX);
+            float.TryParse(Convert.ToString(PageInstance.Request[ManualCropScaleYParamName]), out ManualCropScaleY);
+        }
 
         public string Crop()
-    {
-        if (OutputWidth > 0 && OutputHeight > 0
-            && ResizeType != ScaleMode.None
-            && !string.IsNullOrEmpty(FileToCropPath)
-            && !string.IsNullOrEmpty(NewFileToSavePath)) {
-            System.Drawing.Image CurImage = System.Drawing.Image.FromFile(FileToCropPath);
-            if (CurImage != null) {
-                Bitmap Bmp = new Bitmap(CurImage);
-                Bitmap CroppedBmp = null;
-                if (ResizeType != ScaleMode.Manual) {
-                    CroppedBmp = AutoScaleBitmap(Bmp);
-                }
-                else {
-                    PopulateInstanceVariablesFromRequestParams();
-                    if (ManualCropWidth > 0 && ManualCropHeight > 0) {
-                        CroppedBmp = ManualScaleBitmap(Bmp);
+        {
+            if (OutputWidth > 0 && OutputHeight > 0
+                && ResizeType != ScaleMode.None
+                && !string.IsNullOrEmpty(FileToCropPath)
+                && !string.IsNullOrEmpty(NewFileToSavePath))
+            {
+                System.Drawing.Image CurImage = System.Drawing.Image.FromFile(FileToCropPath);
+                if (CurImage != null)
+                {
+                    Bitmap Bmp = new Bitmap(CurImage);
+                    Bitmap CroppedBmp = null;
+                    if (ResizeType != ScaleMode.Manual)
+                    {
+                        CroppedBmp = AutoScaleBitmap(Bmp);
                     }
-                }
-                Bmp.Dispose();
-                CurImage.Dispose();
-                if (CroppedBmp != null) {
-                    CroppedBmp.Save(NewFileToSavePath);
-                    CroppedBmp.Dispose();
-                    if (ResizeType == ScaleMode.Manual
-                        && ManualCropWidth > 0 && ManualCropHeight > 0) {
-                        string FileNewName = Path.GetFileNameWithoutExtension(NewFileToSavePath) + ".png";
-                        string FileName = Path.GetFileName(NewFileToSavePath);
-                        string FileDir = Path.GetDirectoryName(NewFileToSavePath) + "/";
-                        FileNewName = RenameFile(FileName, FileDir, FileNewName);
-                        return FileNewName;
+                    else
+                    {
+                        PopulateInstanceVariablesFromRequestParams();
+                        if (ManualCropWidth > 0 && ManualCropHeight > 0)
+                        {
+                            CroppedBmp = ManualScaleBitmap(Bmp);
+                        }
                     }
+                    Bmp.Dispose();
+                    CurImage.Dispose();
+                    if (CroppedBmp != null)
+                    {
+                        CroppedBmp.Save(NewFileToSavePath);
+                        CroppedBmp.Dispose();
+                        if (ResizeType == ScaleMode.Manual
+                            && ManualCropWidth > 0 && ManualCropHeight > 0)
+                        {
+                            string FileNewName = Path.GetFileNameWithoutExtension(NewFileToSavePath) + ".png";
+                            string FileName = Path.GetFileName(NewFileToSavePath);
+                            string FileDir = Path.GetDirectoryName(NewFileToSavePath) + "/";
+                            FileNewName = RenameFile(FileName, FileDir, FileNewName);
+                            return FileNewName;
+                        }
+                    }
+
                 }
 
             }
-
+            return Path.GetFileName(NewFileToSavePath);
         }
-        return Path.GetFileName(NewFileToSavePath);
-    }
 
-        public static string RenameFile(string FileName, string FileDir, string FileNewName) {
+        public static string RenameFile(string FileName, string FileDir, string FileNewName)
+        {
 
-        if (FileName != null && FileName != "") {
-            if (FileName.ToLower() == FileNewName.ToLower()) {
+            if (FileName != null && FileName != "")
+            {
+                if (FileName.ToLower() == FileNewName.ToLower())
+                {
+                    return FileNewName;
+                }
+                System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
+
+                if (!FileNewName.Contains("."))
+                {
+                    FileNewName = FileNewName + "." + GetFileExtension(FileName);
+                }
+                FileNewName = GetNonOverwrittenFileName(FileNewName, FileDir);
+
+                string NewFilePath = FileDir + FileNewName;
+                if (!Path.IsPathRooted(FileDir))
+                {
+                    NewFilePath = PageInstance.Server.MapPath(FileDir + FileNewName);
+                }
+                if (System.IO.File.Exists(NewFilePath))
+                {
+                    System.IO.File.Delete(NewFilePath);
+                }
+
+                if (!Path.IsPathRooted(FileDir))
+                {
+                    File.Move(PageInstance.Server.MapPath(FileDir) + FileName, PageInstance.Server.MapPath(FileDir) + FileNewName);
+                }
+                else
+                {
+                    File.Move(FileDir + FileName, FileDir + FileNewName);
+                }
+
                 return FileNewName;
             }
-            System.Web.HttpContext PageInstance = System.Web.HttpContext.Current;
-
-            if (!FileNewName.Contains(".")) {
-                FileNewName = FileNewName + "." + GetFileExtension(FileName);
+            else
+            {
+                return null;
             }
-            FileNewName = GetNonOverwrittenFileName(FileNewName, FileDir);
-
-            string NewFilePath = FileDir + FileNewName;
-            if (!Path.IsPathRooted(FileDir)) {
-                NewFilePath = PageInstance.Server.MapPath(FileDir + FileNewName);
-            }
-            if (System.IO.File.Exists(NewFilePath)) {
-                System.IO.File.Delete(NewFilePath);
-            }
-
-            if (!Path.IsPathRooted(FileDir)) {
-                File.Move(PageInstance.Server.MapPath(FileDir) + FileName, PageInstance.Server.MapPath(FileDir) + FileNewName);
-            } else {
-                File.Move(FileDir + FileName, FileDir + FileNewName);
-            }
-
-            return FileNewName;
-        } else {
-            return null;
         }
-    }
 
         private Bitmap AutoScaleBitmap(Bitmap Bmp)
-    {
-        return AutoScaleBitmap(Bmp, OutputWidth, OutputHeight, ResizeType);
-    }
+        {
+            return AutoScaleBitmap(Bmp, OutputWidth, OutputHeight, ResizeType);
+        }
 
         public static Bitmap AutoScaleBitmap(Bitmap Bmp, int OutputWidth, int OutputHeight, ScaleMode ResizeType)
-    {
+        {
 
-        if (ResizeType == ScaleMode.None) {
-            return Bmp;
-        }
-        else {
-            int SrcWidth = Bmp.Width;
-            int SrcHeight = Bmp.Height;
+            if (ResizeType == ScaleMode.None)
+            {
+                return Bmp;
+            }
+            else
+            {
+                int SrcWidth = Bmp.Width;
+                int SrcHeight = Bmp.Height;
 
-            decimal RatioX = Decimal.Divide(OutputWidth, SrcWidth);
-            decimal RatioY = Decimal.Divide(OutputHeight, SrcHeight);
-            int ResizeToWidth = 0;
-            int ResizeToHeight = 0;
+                decimal RatioX = Decimal.Divide(OutputWidth, SrcWidth);
+                decimal RatioY = Decimal.Divide(OutputHeight, SrcHeight);
+                int ResizeToWidth = 0;
+                int ResizeToHeight = 0;
 
-            bool ScaleModeIsProporitonalCropOutside = (ResizeType == ScaleMode.ProportionalOutside
-                || ResizeType == ScaleMode.ProportionalCropOutsideBottomCenter
-                || ResizeType == ScaleMode.ProportionalCropOutsideBottomLeft
-                || ResizeType == ScaleMode.ProportionalCropOutsideBottomRight
-                || ResizeType == ScaleMode.ProportionalCropOutsideMiddleCenter
-                || ResizeType == ScaleMode.ProportionalCropOutsideMiddleLeft
-                || ResizeType == ScaleMode.ProportionalCropOutsideMiddleRight
-                || ResizeType == ScaleMode.ProportionalCropOutsideTopCenter
-                || ResizeType == ScaleMode.ProportionalCropOutsideTopLeft
-                || ResizeType == ScaleMode.ProportionalCropOutsideTopRight);
+                bool ScaleModeIsProporitonalCropOutside = (ResizeType == ScaleMode.ProportionalOutside
+                    || ResizeType == ScaleMode.ProportionalCropOutsideBottomCenter
+                    || ResizeType == ScaleMode.ProportionalCropOutsideBottomLeft
+                    || ResizeType == ScaleMode.ProportionalCropOutsideBottomRight
+                    || ResizeType == ScaleMode.ProportionalCropOutsideMiddleCenter
+                    || ResizeType == ScaleMode.ProportionalCropOutsideMiddleLeft
+                    || ResizeType == ScaleMode.ProportionalCropOutsideMiddleRight
+                    || ResizeType == ScaleMode.ProportionalCropOutsideTopCenter
+                    || ResizeType == ScaleMode.ProportionalCropOutsideTopLeft
+                    || ResizeType == ScaleMode.ProportionalCropOutsideTopRight);
 
-            if (ScaleModeIsProporitonalCropOutside) {
+                if (ScaleModeIsProporitonalCropOutside)
+                {
 
-                if (RatioX > RatioY) {
-                    ResizeToWidth = OutputWidth;
-                    ResizeToHeight = Convert.ToInt32(Decimal.Multiply(SrcHeight, RatioX));
+                    if (RatioX > RatioY)
+                    {
+                        ResizeToWidth = OutputWidth;
+                        ResizeToHeight = Convert.ToInt32(Decimal.Multiply(SrcHeight, RatioX));
+                    }
+                    else
+                    {
+                        ResizeToWidth = Convert.ToInt32(Decimal.Multiply(SrcWidth, RatioY));
+                        ResizeToHeight = OutputHeight;
+                    }
+
                 }
-                else {
-                    ResizeToWidth = Convert.ToInt32(Decimal.Multiply(SrcWidth, RatioY));
+                else if (ResizeType == ScaleMode.ProportionalInside)
+                {
+
+                    if ((RatioX < RatioY && RatioX > 0) || RatioY <= 0)
+                    {
+                        ResizeToWidth = OutputWidth;
+                        ResizeToHeight = Convert.ToInt32(Decimal.Multiply(SrcHeight, RatioX));
+                    }
+                    else
+                    {
+                        ResizeToWidth = Convert.ToInt32(Decimal.Multiply(SrcWidth, RatioY));
+                        ResizeToHeight = OutputHeight;
+                    }
+                }
+                else if (ResizeType == ScaleMode.Stretch)
+                {
+                    ResizeToWidth = OutputWidth;
                     ResizeToHeight = OutputHeight;
                 }
+                Bitmap NewBmp = new Bitmap(ResizeToWidth, ResizeToHeight);
 
+                System.Drawing.Graphics gr = System.Drawing.Graphics.FromImage(NewBmp);
+                gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                gr.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
+
+                System.Drawing.Rectangle RectDestination = new System.Drawing.Rectangle(0, 0, ResizeToWidth, ResizeToHeight);
+                gr.DrawImage(Bmp, RectDestination, 0, 0, SrcWidth, SrcHeight, GraphicsUnit.Pixel);
+
+                if (ScaleModeIsProporitonalCropOutside)
+                {
+
+                    int x = (ResizeToWidth - OutputWidth) / 2;
+                    int y = (ResizeToHeight - OutputHeight) / 2;
+
+                    if (ResizeType == ScaleMode.ProportionalCropOutsideTopCenter)
+                    {
+                        x = (ResizeToWidth - OutputWidth) / 2;
+                        y = 0;
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideTopLeft)
+                    {
+                        x = 0;
+                        y = 0;
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideTopRight)
+                    {
+                        x = (ResizeToWidth - OutputWidth);
+                        y = 0;
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideMiddleCenter)
+                    {
+                        x = (ResizeToWidth - OutputWidth) / 2;
+                        y = (ResizeToHeight - OutputHeight) / 2;
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideMiddleLeft)
+                    {
+                        x = 0;
+                        y = (ResizeToHeight - OutputHeight) / 2;
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideTopRight)
+                    {
+                        x = (ResizeToWidth - OutputWidth);
+                        y = (ResizeToHeight - OutputHeight) / 2;
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideBottomCenter)
+                    {
+                        x = (ResizeToWidth - OutputWidth) / 2;
+                        y = (ResizeToHeight - OutputHeight);
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideBottomLeft)
+                    {
+                        x = 0;
+                        y = (ResizeToHeight - OutputHeight);
+                    }
+                    else if (ResizeType == ScaleMode.ProportionalCropOutsideBottomRight)
+                    {
+                        x = (ResizeToWidth - OutputWidth);
+                        y = (ResizeToHeight - OutputHeight);
+                    }
+
+                    System.Drawing.Rectangle Rect = new System.Drawing.Rectangle(x, y, OutputWidth, OutputHeight);
+                    NewBmp = NewBmp.Clone(Rect, NewBmp.PixelFormat);
+                }
+                return NewBmp;
             }
-            else if (ResizeType == ScaleMode.ProportionalInside) {
-
-                if ((RatioX < RatioY && RatioX > 0) || RatioY <= 0) {
-                    ResizeToWidth = OutputWidth;
-                    ResizeToHeight = Convert.ToInt32(Decimal.Multiply(SrcHeight, RatioX));
-                }
-                else {
-                    ResizeToWidth = Convert.ToInt32(Decimal.Multiply(SrcWidth, RatioY));
-                    ResizeToHeight = OutputHeight;
-                }
-            }
-            else if (ResizeType == ScaleMode.Stretch) {
-                ResizeToWidth = OutputWidth;
-                ResizeToHeight = OutputHeight;
-            }
-            Bitmap NewBmp = new Bitmap(ResizeToWidth, ResizeToHeight);
-
-            System.Drawing.Graphics gr = System.Drawing.Graphics.FromImage(NewBmp);
-            gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            gr.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            gr.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.High;
-
-            System.Drawing.Rectangle RectDestination = new System.Drawing.Rectangle(0, 0, ResizeToWidth, ResizeToHeight);
-            gr.DrawImage(Bmp, RectDestination, 0, 0, SrcWidth, SrcHeight, GraphicsUnit.Pixel);
-
-            if (ScaleModeIsProporitonalCropOutside) {
-
-                int x = (ResizeToWidth - OutputWidth) / 2;
-                int y = (ResizeToHeight - OutputHeight) / 2;
-
-                if (ResizeType == ScaleMode.ProportionalCropOutsideTopCenter) {
-                    x = (ResizeToWidth - OutputWidth) / 2;
-                    y = 0;
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideTopLeft) {
-                    x = 0;
-                    y = 0;
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideTopRight) {
-                    x = (ResizeToWidth - OutputWidth);
-                    y = 0;
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideMiddleCenter) {
-                    x = (ResizeToWidth - OutputWidth) / 2;
-                    y = (ResizeToHeight - OutputHeight) / 2;
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideMiddleLeft) {
-                    x = 0;
-                    y = (ResizeToHeight - OutputHeight) / 2;
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideTopRight) {
-                    x = (ResizeToWidth - OutputWidth);
-                    y = (ResizeToHeight - OutputHeight) / 2;
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideBottomCenter) {
-                    x = (ResizeToWidth - OutputWidth) / 2;
-                    y = (ResizeToHeight - OutputHeight);
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideBottomLeft) {
-                    x = 0;
-                    y = (ResizeToHeight - OutputHeight);
-                }
-                else if (ResizeType == ScaleMode.ProportionalCropOutsideBottomRight) {
-                    x = (ResizeToWidth - OutputWidth);
-                    y = (ResizeToHeight - OutputHeight);
-                }
-
-                System.Drawing.Rectangle Rect = new System.Drawing.Rectangle(x, y, OutputWidth, OutputHeight);
-                NewBmp = NewBmp.Clone(Rect, NewBmp.PixelFormat);
-            }
-            return NewBmp;
         }
-    }
 
         public Bitmap ManualScaleBitmap(Bitmap Bmp)
-    {
-        Bitmap NewBmp = Bmp.Clone() as Bitmap;
+        {
+            Bitmap NewBmp = Bmp.Clone() as Bitmap;
 
-        if (ManualCropWidth == 0 || ManualCropHeight == 0) {
-            return NewBmp;
+            if (ManualCropWidth == 0 || ManualCropHeight == 0)
+            {
+                return NewBmp;
+            }
+
+            if (ManualCropScaleX == -1)
+            {
+                NewBmp.RotateFlip(RotateFlipType.RotateNoneFlipX);
+            }
+            if (ManualCropScaleY == -1)
+            {
+                NewBmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            }
+            if (ManualCropRotate != 0)
+            {
+                NewBmp = RotateBitmap(NewBmp, ManualCropRotate);
+            }
+
+            Rectangle CropRect = new Rectangle((int)ManualCropPositionX, (int)ManualCropPositionY, (int)ManualCropWidth, (int)ManualCropHeight);
+            Bitmap CroppedBmp = NewBmp.Clone(CropRect, NewBmp.PixelFormat);
+            NewBmp.Dispose();
+
+            CroppedBmp = AutoScaleBitmap(CroppedBmp, OutputWidth, OutputHeight, ScaleMode.ProportionalOutside);
+            return CroppedBmp;
+
         }
-
-        if (ManualCropScaleX == -1) {
-            NewBmp.RotateFlip(RotateFlipType.RotateNoneFlipX);
-        }
-        if (ManualCropScaleY == -1) {
-            NewBmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-        }
-        if (ManualCropRotate != 0) {
-            NewBmp = RotateBitmap(NewBmp, ManualCropRotate);
-        }
-
-        Rectangle CropRect = new Rectangle((int)ManualCropPositionX, (int)ManualCropPositionY, (int)ManualCropWidth, (int)ManualCropHeight);
-        Bitmap CroppedBmp = NewBmp.Clone(CropRect, NewBmp.PixelFormat);
-        NewBmp.Dispose();
-
-        CroppedBmp = AutoScaleBitmap(CroppedBmp, OutputWidth, OutputHeight, ScaleMode.ProportionalOutside);
-        return CroppedBmp;
-
-    }
 
         public Bitmap RotateBitmap(Bitmap Bmp, float Angle)
-    {
-        int BmpWidth = Bmp.Width;
-        int BmpHeight = Bmp.Height;
-        double CurAngle = Angle * Math.PI / 180;
-        double CurAngleCos = Math.Abs(Math.Cos(CurAngle));
-        double CurAngleSin = Math.Abs(Math.Sin(CurAngle));
-        int ReturnBmpWidth = (int)(BmpWidth * CurAngleCos + BmpHeight * CurAngleSin);
-        int ReturnBmpHeight = (int)(BmpWidth * CurAngleSin + BmpHeight * CurAngleCos);
-        Bitmap ReturnBitmap = new Bitmap(ReturnBmpWidth, ReturnBmpHeight);
-        Graphics g = Graphics.FromImage(ReturnBitmap);
-        g.TranslateTransform((float)(ReturnBmpWidth - BmpWidth) / 2, (float)(ReturnBmpHeight - BmpHeight) / 2);
-        g.TranslateTransform((float)Bmp.Width / 2, (float)Bmp.Height / 2);
-        g.RotateTransform(Angle);
-        g.TranslateTransform(-(float)Bmp.Width / 2, -(float)Bmp.Height / 2);
-        g.DrawImage(Bmp, new Point(0, 0));
-        Bmp.Dispose();
-        return ReturnBitmap;
-    }
+        {
+            int BmpWidth = Bmp.Width;
+            int BmpHeight = Bmp.Height;
+            double CurAngle = Angle * Math.PI / 180;
+            double CurAngleCos = Math.Abs(Math.Cos(CurAngle));
+            double CurAngleSin = Math.Abs(Math.Sin(CurAngle));
+            int ReturnBmpWidth = (int)(BmpWidth * CurAngleCos + BmpHeight * CurAngleSin);
+            int ReturnBmpHeight = (int)(BmpWidth * CurAngleSin + BmpHeight * CurAngleCos);
+            Bitmap ReturnBitmap = new Bitmap(ReturnBmpWidth, ReturnBmpHeight);
+            Graphics g = Graphics.FromImage(ReturnBitmap);
+            g.TranslateTransform((float)(ReturnBmpWidth - BmpWidth) / 2, (float)(ReturnBmpHeight - BmpHeight) / 2);
+            g.TranslateTransform((float)Bmp.Width / 2, (float)Bmp.Height / 2);
+            g.RotateTransform(Angle);
+            g.TranslateTransform(-(float)Bmp.Width / 2, -(float)Bmp.Height / 2);
+            g.DrawImage(Bmp, new Point(0, 0));
+            Bmp.Dispose();
+            return ReturnBitmap;
+        }
 
     }
 

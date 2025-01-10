@@ -349,8 +349,8 @@ function buildUploaders() {
             onFileDeleted: onFileDeleted,
             onCanceled: onCanceled,
             onError: onError,
-            compressImageWidth: cropWidth * 2,
-            compressImageHeight: cropHeight * 2,
+            compressImageWidth: cropWidth * 3,
+            compressImageHeight: cropHeight * 3,
             onFilesSelected: function (files, continueUpload) {
                 ImageCropper.startCropImages(files, uploaderWithManualCrop, cropWidth / cropHeight, continueUpload);
             },
