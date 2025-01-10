@@ -1,2 +1,4 @@
 SlashUploader.code-workspace
 compile/
+server/uploads/*
+!server/uploads/README.md
