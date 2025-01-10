@@ -1172,6 +1172,7 @@ function SlashUploader(element, opts) {
 				if (instance.compressImageWidth > 0
 					&& instance.compressImageHeight > 0
 					&& !!window.HTMLCanvasElement // Canvas supported on this browser
+					&& typeof HTMLCanvasElement.prototype.toBlob === "function" // Canvas.toBlob supported on this browser
 					&& (this.width > instance.compressImageWidth || this.height > instance.compressImageHeight)
 					) { 
 					
@@ -1192,7 +1193,7 @@ function SlashUploader(element, opts) {
 	
 					ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
 					canvas.toBlob(
-						(blob) => {
+						function (blob) {
 							if (blob) {
 								// Change current file data into new compressed file
 								originalBlob = blob;

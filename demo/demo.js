@@ -335,7 +335,6 @@ function buildUploaders() {
         serverScripts: sameDomainScripts
     });
     var autoCropFields = "&resize_type=ProportionalCropOutsideBottomRight&resize_output_width=" + cropWidth + "&resize_output_height=" + cropHeight;
-    autoCropFields = "";
     uploaderWithAutoCrop.serverScripts.uploadChunk = uploaderWithAutoCrop.serverScripts.uploadChunk + autoCropFields;
     uploaderWithAutoCrop.serverScripts.uploadStream = uploaderWithAutoCrop.serverScripts.uploadStream + autoCropFields;
     uploaderWithAutoCrop.serverScripts.uploadThroughIframe = uploaderWithAutoCrop.serverScripts.uploadThroughIframe + autoCropFields;
