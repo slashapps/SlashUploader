@@ -20,7 +20,7 @@ var ImageCropper = {
 						Your browser does not support the HTML5 canvas element.\
 					</canvas>\
 					<div id="cropper_loading">\
-						<div id="cropper_loading_animation">Loading...</div>\
+						<div id="cropper_loading">Loading...</div>\
 					</div>\
 				</div>\
 				<div id="cropper_buttons">\
@@ -101,7 +101,8 @@ var ImageCropper = {
                     context.drawImage(img, 0, 0);
                     cropper = new Cropper(canvas, {
                         aspectRatio: cropSizeRatio,
-                        viewMode: ImageCropper.isMobile ? 0 : 2,
+                        //viewMode: ImageCropper.isMobile ? 0 : 2,
+                        viewMode: 0,
                         dragMode: "move",
                         ready: function () {
                             this.cropper.setData({ "rotate": Math.floor(initAngle) });

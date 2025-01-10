@@ -329,10 +329,13 @@ function buildUploaders() {
         onFileDeleted: onFileDeleted,
         onCanceled: onCanceled,
         onError: onError,
+        compressImageWidth: cropWidth,
+        compressImageHeight: cropHeight,
         iframeGateway: iframeGateway,
         serverScripts: sameDomainScripts
     });
     var autoCropFields = "&resize_type=ProportionalCropOutsideBottomRight&resize_output_width=" + cropWidth + "&resize_output_height=" + cropHeight;
+    autoCropFields = "";
     uploaderWithAutoCrop.serverScripts.uploadChunk = uploaderWithAutoCrop.serverScripts.uploadChunk + autoCropFields;
     uploaderWithAutoCrop.serverScripts.uploadStream = uploaderWithAutoCrop.serverScripts.uploadStream + autoCropFields;
     uploaderWithAutoCrop.serverScripts.uploadThroughIframe = uploaderWithAutoCrop.serverScripts.uploadThroughIframe + autoCropFields;
@@ -347,6 +350,8 @@ function buildUploaders() {
             onFileDeleted: onFileDeleted,
             onCanceled: onCanceled,
             onError: onError,
+            compressImageWidth: cropWidth * 2,
+            compressImageHeight: cropHeight * 2,
             onFilesSelected: function (files, continueUpload) {
                 ImageCropper.startCropImages(files, uploaderWithManualCrop, cropWidth / cropHeight, continueUpload);
             },

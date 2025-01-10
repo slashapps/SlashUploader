@@ -23,6 +23,7 @@ The plugin contain the following features:
   * **Dynamic Options** - Plugin options can be set any time, not only at initialization.
   * **Cancel Upload** - Button for the user to abort.
   * **Ability to Disable** - Disable user interaction.
+  * **Compress Images** - Resize image before upload, for a faster progress.
   
 ## Compatibility
 

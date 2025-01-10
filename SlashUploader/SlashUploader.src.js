@@ -1,5 +1,5 @@
 /*
- * SlashUploader - JS plugin - Version 1.5.8
+ * SlashUploader - JS plugin - Version 1.5.9
  * http://slashuploader.com/
  * Copyright (c) 2018-present Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
@@ -32,7 +32,7 @@ function FileData(file) {
 
 function SlashUploader(element, opts) {
 
-	this.version = "1.5.8";
+	this.version = "1.5.9";
 	this.opts = opts;
 	this._internalVariables = {};
 	this._internalVariables.instance = this;
@@ -232,6 +232,8 @@ function SlashUploader(element, opts) {
 	this.displayErrorDuration = 4500;
 	this.retryTimes = 10;
 	this.retryTimeout = 1500;
+	this.compressImageWidth = null;
+	this.compressImageHeight = null;
 	this.status = "idle"; // idle / uploading / uploaded / canceled / error
 
 	_variables.serverScripts = {
@@ -1072,18 +1074,17 @@ function SlashUploader(element, opts) {
 						});
 					}
 					reader.onloadend = function (event) {
-						var image = new Image();
+						
 						var bytes = new Uint8Array(event.target.result);
 						var blob = new Blob([bytes.buffer]);
-						image.src = URL.createObjectURL(blob);
+						instance._internalVariables.compressImageBlob(blob, metadata,
+							function() {
+								clearTimeout(metadataFailedTimeout);
+							},
+							function () {
+								instance._internalVariables.getFileMetaFinished(file, metadata);
+							});
 
-						//image.src = event.target.result;
-						image.onload = function () {
-							clearTimeout(metadataFailedTimeout);
-							metadata.width = this.width;
-							metadata.height = this.height;
-							instance._internalVariables.getFileMetaFinished(file, metadata);
-						};
 					}
 					reader.readAsArrayBuffer(file);
 					//reader.readAsDataURL(file);
@@ -1141,6 +1142,83 @@ function SlashUploader(element, opts) {
 		} else {
 
 			instance._internalVariables.getFileMetaFinished(file, metadata);
+
+		}
+
+	}
+
+	this._internalVariables.compressImageBlob = function (originalBlob, metadata, onBlobloaded, onFinished) {
+
+		var instance = this.instance;
+		var curFile = instance._internalVariables.curUploadingFilesData[instance._internalVariables.curUploadingFileIndex].file;
+
+		var fileName = curFile.name;
+		if (fileName == null) {
+			fileName = "";
+		}
+
+		if (instance._internalVariables.isImg(fileName)) {
+			
+			var image = new Image();
+			image.src = URL.createObjectURL(originalBlob);
+			
+			image.onload = function () {
+				if (typeof onBlobloaded == "function") {
+					onBlobloaded();
+				}
+				metadata.width = this.width;
+				metadata.height = this.height;
+	
+				if (instance.compressImageWidth > 0
+					&& instance.compressImageHeight > 0
+					&& !!window.HTMLCanvasElement // Canvas supported on this browser
+					&& (this.width > instance.compressImageWidth || this.height > instance.compressImageHeight)
+					) { 
+					
+					// Compress image before upload, to compressImageWidth or compressImageHeight
+					var quality = 1;
+					var canvas = document.createElement("canvas");
+					var ctx = canvas.getContext("2d");
+					var scaleFactorByWidth = instance.compressImageWidth / this.width;
+					var scaleFactorByHeight = instance.compressImageHeight / this.height;
+	
+					if (scaleFactorByWidth > scaleFactorByHeight) {
+						canvas.width = instance.compressImageWidth;
+						canvas.height = this.height * scaleFactorByWidth;
+					} else  {
+						canvas.height = instance.compressImageHeight;
+						canvas.width = this.width * scaleFactorByHeight;
+					}
+	
+					ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
+					canvas.toBlob(
+						(blob) => {
+							if (blob) {
+								// Change current file data into new compressed file
+								originalBlob = blob;
+								metadata.file = new File([blob], fileName, { type: blob.type, lastModified: Date.now() });
+								instance._internalVariables.curUploadingFilesData[instance._internalVariables.curUploadingFileIndex].file = metadata.file;
+								metadata.width = canvas.width;
+								metadata.height = canvas.height;
+							} else {
+								// Compression failed
+							}
+							onFinished();
+							
+						},
+						curFile.type,
+						quality
+					);
+	
+				} else {
+					onFinished();
+				}
+	
+			};
+
+		} else {
+
+			onFinished();
 
 		}
 
@@ -1290,11 +1368,10 @@ function SlashUploader(element, opts) {
 
 			var fileData = instance._internalVariables.curUploadingFilesData[fileIndex];
 			var blob = files[fileIndex].file;
-			//var completed = 0;
 			var randomId = Math.floor(Math.random() * 999999999);
 			instance._internalVariables.uploadErrorCount = 0;
 			instance._internalVariables.uploadFileChunk(fileData, randomId, blob, 0, 0, instance._internalVariables.BYTES_PER_CHUNK);
-
+			
 		} else {
 
 			if (instance._internalVariables.getUploadType() == "stream") {
@@ -1349,6 +1426,11 @@ function SlashUploader(element, opts) {
 
 					}
 
+				}, false);
+				
+				xhr.addEventListener("error", function () {
+                    instance._internalVariables.setError('upload_failed', files[fileIndex]);
+                    instance._internalVariables.uploadXhr = null;
 				}, false);
 
 				script = instance.serverScripts.uploadStream;

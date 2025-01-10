@@ -40,8 +40,8 @@
 
 #cropper_canvas {}
 
-#cropper_loading_animation {
-	width: 1px;
+#cropper_loading {
+	/*width: 1px;*/
 	height: 1px;
 	margin: auto;
 	color: white;

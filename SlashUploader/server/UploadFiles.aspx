@@ -7,7 +7,7 @@
 <%
 
 /*
- * SlashUploader - JS plugin - Version 1.5.8
+ * SlashUploader - JS plugin - Version 1.5.9
  * http://slashuploader.com/
  * Copyright (c) 2018-present Slash Apps Development, http://slash.co.il/
  * Licensed under the MIT License [https://en.wikipedia.org/wiki/MIT_License]
