@@ -24,7 +24,7 @@ function FileData(file) {
 		}
 		this.name = fileName;
 		this.size = file.size / 1024;
-		this.extension = fileName.substr(fileName.lastIndexOf(".") + 1, 5).toLowerCase();
+		this.extension = fileName.substr(fileName.lastIndexOf(".") + 1, 20).toLowerCase();
 	};
 
 	this.init(file);
@@ -1033,7 +1033,7 @@ function SlashUploader(element, opts) {
 			file: file,
 			name: fileName,
 			size: file.size,
-			extension: fileName.substr(fileName.lastIndexOf(".") + 1, 5),
+			extension: fileName.substr(fileName.lastIndexOf(".") + 1, 20),
 			type: file.type,
 			width: null,
 			height: null,
@@ -2306,7 +2306,7 @@ function SlashUploader(element, opts) {
 
 	this._internalVariables.isFileType = function (file, curFileTypes) {
 
-		var fileExtension = file.substr(file.lastIndexOf("."), 5);
+		var fileExtension = file.substr(file.lastIndexOf("."), 20);
 		fileExtension = fileExtension.toLowerCase();
 		var result = (noJquery.inArray(fileExtension.toLowerCase(), curFileTypes) != -1);
 		return result;
