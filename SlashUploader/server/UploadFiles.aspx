@@ -428,28 +428,16 @@ StartUpload(FileFolder, DoOverwriteFilename, SaveFileWithGuidFilename, AllowedFi
 
     }
 
+    
     private static void MergeFileChunks(string File1, string File2)
     {
-        FileStream Fs1 = null;
-        FileStream Fs2 = null;
-        try
+        using (var stream1 = new FileStream(File1, FileMode.Append, FileAccess.Write))
+        using (var stream2 = new FileStream(File2, FileMode.Open, FileAccess.Read))
         {
-            Fs1 = System.IO.File.Open(File1, FileMode.Append);
-            Fs2 = System.IO.File.Open(File2, FileMode.Open);
-            byte[] Fs2Content = new byte[Fs2.Length];
-            Fs2.Read(Fs2Content, 0, (int)Fs2.Length);
-            Fs1.Write(Fs2Content, 0, (int)Fs2.Length);
+            stream2.CopyTo(stream1);
         }
-        catch (Exception ex)
-        {
-            //Console.WriteLine(ex.Message + " : " + ex.StackTrace);
-        }
-        finally
-        {
-            Fs1.Close();
-            Fs2.Close();
-            System.IO.File.Delete(File2);
-        }
+
+        File.Delete(File2);
     }
 
     private static NameValueCollection SaveFileFromStreamData(string FileName, string FileFolder, int Rotation, bool DoOverwrite, bool SaveFileWithGuidFilename)
