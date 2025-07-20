@@ -2095,6 +2095,26 @@ function SlashUploader(element, opts) {
 
 	}
 
+	this._internalVariables.getStreamOrChuncksUploadTypeBasedOnFileSize = function () {
+
+		var instance = this.instance;
+		var hasHeavyFiles = false;
+		if (instance._internalVariables.curUploadingFilesData != null && instance._internalVariables.curUploadingFilesData.length > 0) {
+			for (var i = 0; i < instance._internalVariables.curUploadingFilesData.length; i++) {
+				if (instance._internalVariables.curUploadingFilesData[i].size >= instance.fileSizeToForceChunksUpload) {
+					hasHeavyFiles = true;
+					break;
+				}
+			}
+		}
+		if (hasHeavyFiles && instance._internalVariables.canUploadFileInChunks()) {
+			return "chunks";
+		} else {
+			return "stream";
+		}
+
+	}
+
 	this._internalVariables.getUploadType = function () {
 
 		var instance = this.instance;
@@ -2103,7 +2123,7 @@ function SlashUploader(element, opts) {
 			for (var i = 0; i < instance.uploadTypePriority.length; i++) {
 
 				if (instance.uploadTypePriority[i] == "stream" && instance._internalVariables.canUploadFileInStream()) {
-					return "stream";
+					return instance._internalVariables.getStreamOrChuncksUploadTypeBasedOnFileSize();
 				} else if (instance.uploadTypePriority[i] == "chunks" && instance._internalVariables.canUploadFileInChunks()) {
 					return "chunks";
 				} else if (instance.uploadTypePriority[i] == "iframe" && instance._internalVariables.canUploadFileUsingIframe()) {
@@ -2115,30 +2135,11 @@ function SlashUploader(element, opts) {
 
 		// Default behaviour
 		if (instance._internalVariables.canUploadFileInStream()) {
-
-			var hasHeavyFiles = false;
-			if (instance._internalVariables.curUploadingFilesData != null && instance._internalVariables.curUploadingFilesData.length > 0) {
-				for (var i = 0; i < instance._internalVariables.curUploadingFilesData.length; i++) {
-					if (instance._internalVariables.curUploadingFilesData[i].size >= instance.fileSizeToForceChunksUpload) {
-						hasHeavyFiles = true;
-						break;
-					}
-				}
-			}
-			if (hasHeavyFiles && instance._internalVariables.canUploadFileInChunks()) {
-				return "chunks";
-			} else {
-				return "stream";
-			}
-
+			return instance._internalVariables.getStreamOrChuncksUploadTypeBasedOnFileSize();
 		} else if (instance._internalVariables.canUploadFileInChunks()) {
-
 			return "chunks";
-
 		} else {
-
 			return "iframe";
-
 		}
 
 	}
