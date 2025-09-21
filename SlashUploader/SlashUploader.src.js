@@ -1168,12 +1168,13 @@ function SlashUploader(element, opts) {
 				}
 				metadata.width = this.width;
 				metadata.height = this.height;
-	
+				
 				if (instance.compressImageWidth > 0
 					&& instance.compressImageHeight > 0
 					&& !!window.HTMLCanvasElement // Canvas supported on this browser
 					&& typeof HTMLCanvasElement.prototype.toBlob === "function" // Canvas.toBlob supported on this browser
 					&& (this.width > instance.compressImageWidth || this.height > instance.compressImageHeight)
+					&& instance._internalVariables.getUploadType() != "iframe"
 					) { 
 					
 					// Compress image before upload, to compressImageWidth or compressImageHeight
@@ -1212,7 +1213,12 @@ function SlashUploader(element, opts) {
 					);
 	
 				} else {
+					
+					if (instance.compressImageWidth > 0 || instance.compressImageHeight > 0) {
+						instance._internalVariables.consoleError("Can't compress image '" + fileName + "'");
+					}
 					onFinished();
+
 				}
 	
 			};
