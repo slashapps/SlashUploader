@@ -1380,7 +1380,7 @@ function SlashUploader(element, opts) {
 			instance._internalVariables.uploadFileChunk(fileData, randomId, blob, 0, 0, instance._internalVariables.BYTES_PER_CHUNK);
 			
 		} else {
-
+			
 			if (instance._internalVariables.getUploadType() == "stream") {
 
 				var fileData = instance._internalVariables.curUploadingFilesData[fileIndex];
@@ -1963,7 +1963,7 @@ function SlashUploader(element, opts) {
 			for (var i = 0; i < deleteBtns.length; i++) {
 				noJquery(deleteBtns.item(i)).on("click", function () {
 					if (!instance.disabled) {
-						instance._internalVariables.deleteFile(noJquery(this).attr("data-index"));
+						instance.deleteFile(noJquery(this).attr("data-index"));
 					}
 				});
 			}
@@ -1972,9 +1972,9 @@ function SlashUploader(element, opts) {
 
 	}
 
-	this._internalVariables.deleteFile = function (index) {
+	this.deleteFile = function (index) {
 
-		var instance = this.instance;
+		var instance = this;
 		if (index == "all") {
 
 			while (instance.uploadedFiles.length > 0) {
