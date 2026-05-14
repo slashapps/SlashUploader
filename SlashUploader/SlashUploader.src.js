@@ -222,7 +222,7 @@ function SlashUploader(element, opts) {
 	this.customValidation = null;
 	this.customHTML = false;
 	this.uploadTypePriority = ["stream", "chunks", "iframe"];
-	this.fileSizeToForceChunksUpload = 500000;
+	this.fileSizeToForceChunksUpload = 150000;
 	this.resetFilesOnEachUpload = true;
 	this.iframeGateway = "./SlashUploader/iframe_gateway.html";
 	this.doGetFileMetadata = true;

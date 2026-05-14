@@ -33,7 +33,6 @@ var sameDomainScripts = {
 
 
 
-
 function init() {
     setTimeout(function () {
         buildUploaders();
@@ -109,7 +108,9 @@ function buildUploaders() {
 
     uploaderDefault = new SlashUploader(document.getElementById("uploader_default"), {
         iframeGateway: iframeGateway,
-        serverScripts: sameDomainScripts
+        serverScripts: sameDomainScripts,
+
+        uploadTypePriority: ["iframe", "chunks", "stream"]
     });
 
     uploaderSingleFile = new SlashUploader(document.getElementById("uploader_single_file"), {
